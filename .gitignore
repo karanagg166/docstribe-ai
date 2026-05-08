@@ -54,4 +54,5 @@ pip-delete-this-directory.txt
 *.log
 
 # Prisma (if applicable)
-# prisma/generated/
+# Project specific
+backend/app/data/.cache/

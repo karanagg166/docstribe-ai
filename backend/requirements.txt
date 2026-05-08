@@ -12,7 +12,7 @@ alembic==1.16.1
 
 # Database drivers
 # Uncomment your preferred DB driver:
-# psycopg2-binary==2.9.10    # PostgreSQL
+psycopg2-binary==2.9.12
 # aiosqlite==0.21.0          # SQLite async
 
 # AI / LLM

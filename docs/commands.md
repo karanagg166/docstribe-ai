@@ -175,3 +175,34 @@ View your project structure (excluding noise folders):
 ```bash
 tree -I 'node_modules|.next|__pycache__|.git|.venv|*.pyc|generated' --dirsfirst
 ```
+
+## 10. API & Database Testing
+
+### Check Cohere API Connection:
+
+```bash
+docker compose exec backend python -c "import os, cohere; from dotenv import load_dotenv; load_dotenv(); co = cohere.ClientV2(os.getenv('COHERE_API_KEY')); print('Cohere OK' if co.models.list() else 'Cohere Error')"
+```
+
+### Check DB Connection:
+
+```bash
+docker compose exec backend python test_db.py
+```
+
+### Validate Schema (Check Existing Tables):
+
+```bash
+docker compose exec backend python validate_schema.py
+```
+
+### Sync DB with Models (Future):
+
+### Direct DB Shell:
+
+If you need to run raw SQL queries:
+
+```bash
+# Requires psql client installed locally or inside container
+docker compose exec backend psql $DATABASE_URL
+```

@@ -1,0 +1,1848 @@
+{
+  "hospital": "Apex Multispeciality Hospital",
+  "data_extract_date": "2026-04-28",
+  "extract_window": "2025-10-28 to 2026-04-28 (6 months)",
+  "description": "Outpatient (OP) referral conversion dataset. Each patient was advised admission for a procedure during an OPD visit. Coordinator follow-up calls track conversion. Visit history, vitals, labs, prescriptions, and call logs are raw inputs.",
+  "patient_count": 10,
+  "patients": [
+    {
+      "patient_id": "P-0001",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Harvinder S.",
+      "age": 59,
+      "gender": "MALE",
+      "phone": "XXXXXX4942",
+      "workflow_type": "opd",
+      "workflow_status": "new",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "CARDIOLOGY",
+        "doctor": "Dr. Abhishek M.",
+        "op_advised": true,
+        "op_advised_reason": "59-year-old male with stable angina, hypertension, diabetes, and dyslipidemia. Coronary angiogram pending as OP procedure; currently mildly symptomatic with dyspnea on exertion, hemodynamically stable by available findings.",
+        "estimated_los_days": 3
+      },
+      "history": {
+        "known_conditions": [
+          "hypertension",
+          "diabetes",
+          "dyslipidemia"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "stable angina",
+            "symptoms": [
+              "mild dyspnea on exertion"
+            ],
+            "evidence_text": [
+              "diagnosis of stable angina",
+              "complaint of mild dyspnea on exertion"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2025-10-30",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Abhishek M.",
+          "chief_complaint": "Chest discomfort on exertion x 2 months, occasional sweating",
+          "vitals": {
+            "bp": "162/96",
+            "hr": 88,
+            "spo2": 98,
+            "weight_kg": 78,
+            "rr": 18,
+            "temp_f": 98.4
+          },
+          "examination": "S1 S2 normal, no murmurs. Bilateral basal crepts negative. No pedal edema.",
+          "labs": {
+            "fbs": 168,
+            "ppbs": 248,
+            "hba1c": 8.2,
+            "ldl": 142,
+            "hdl": 36,
+            "tg": 220,
+            "creatinine": 1.1,
+            "tsh": 2.4
+          },
+          "imaging": "T wave inversion in II, III, aVF",
+          "diagnosis_text": "Stable angina, T2DM uncontrolled, dyslipidemia, HTN",
+          "prescription": [
+            "Telmisartan 40mg OD",
+            "Metformin 500mg BD",
+            "Atorvastatin 20mg HS",
+            "Aspirin 75mg OD"
+          ],
+          "advice": "TMT advised. Lifestyle modification. Review with reports."
+        },
+        {
+          "visit_date": "2026-01-28",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Abhishek M.",
+          "chief_complaint": "Persistent chest discomfort, dyspnea climbing 1 flight stairs",
+          "vitals": {
+            "bp": "158/94",
+            "hr": 82,
+            "spo2": 97,
+            "weight_kg": 77,
+            "rr": 18,
+            "temp_f": 98.6
+          },
+          "examination": "TMT positive at stage II, ST depression 1.5mm in inferior leads. Stopped due to chest pain.",
+          "labs": {
+            "fbs": 156,
+            "ppbs": 232,
+            "hba1c": 7.9,
+            "ldl": 118,
+            "hdl": 38,
+            "tg": 198,
+            "creatinine": 1.1
+          },
+          "imaging": "T inversion II, III, aVF persisting",
+          "diagnosis_text": "Stable angina (TMT positive), advised CAG",
+          "prescription": [
+            "Telmisartan 40mg OD",
+            "Metformin 500mg BD",
+            "Atorvastatin 40mg HS",
+            "Aspirin 75mg OD",
+            "Nitroglycerin SL SOS",
+            "Bisoprolol 2.5mg OD"
+          ],
+          "advice": "Coronary angiogram strongly advised. OP admission counselled."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Abhishek M.",
+          "chief_complaint": "Mild dyspnea on exertion, no fresh angina episodes",
+          "vitals": {
+            "bp": "150/92",
+            "hr": 76,
+            "spo2": 98,
+            "weight_kg": 76,
+            "rr": 16,
+            "temp_f": 98.4
+          },
+          "examination": "Hemodynamically stable. CVS: S1 S2 normal. No raised JVP.",
+          "labs": {
+            "fbs": 148,
+            "ppbs": 218,
+            "hba1c": 7.6,
+            "ldl": 102,
+            "creatinine": 1.0
+          },
+          "diagnosis_text": "Stable angina, OP admission for CAG advised",
+          "prescription": [
+            "Continue same. Hold metformin morning of procedure."
+          ],
+          "advice": "Admit for CAG. Pre-anesthesia checkup done. Patient counselled re: cost ~Rs 50,000."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-04-29",
+          "outcome": "connected",
+          "duration_sec": 142,
+          "transcript_summary": "Patient said he wants to discuss with family. Mentioned cost is a concern. Asked about insurance coverage."
+        },
+        {
+          "call_date": "2026-05-01",
+          "outcome": "connected",
+          "duration_sec": 98,
+          "transcript_summary": "Patient confirmed not interested in proceeding here. Prefers to do procedure in his hometown hospital where his nephew is a doctor. Polite but firm."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "ip_admission",
+          "title": "OP Admission Advised",
+          "description": "Patient recommended for OP admission based on surgical procedure",
+          "due_date": "2026-03-12",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: CORONARY ANGIOGRAM",
+          "description": "Prescribed procedure: CORONARY ANGIOGRAM",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TAB TELMA",
+          "description": "Prescribed medication: TAB TELMA",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TAB ROSUVAS",
+          "description": "Prescribed medication: TAB ROSUVAS",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0002",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Ganesh B.",
+      "age": 33,
+      "gender": "MALE",
+      "phone": "XXXXXX7621",
+      "workflow_type": "opd",
+      "workflow_status": "new",
+      "agent_worked_status": null,
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "NEUROLOGY",
+        "doctor": "Dr. Mukheem M.",
+        "op_advised": true,
+        "op_advised_reason": "33-year-old male with chronic generalized dystonia due to kernicterus, currently being considered for bilateral pallidotomy as per neurology and neurosurgery advice. Procedure is not yet scheduled.",
+        "estimated_los_days": 7
+      },
+      "history": {
+        "known_conditions": [
+          "dystonia",
+          "kerincterus",
+          "GDD",
+          "parathesias"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "generalised dystonia",
+            "symptoms": [
+              "abnormal movements",
+              "muscle rigidity",
+              "postural difficulty"
+            ],
+            "evidence_text": [
+              "case of kernicterus",
+              "diagnosed generalized dystonia",
+              "on combination neurology medications",
+              "regular follow-up for movement disorder",
+              "clinical notes and exam findings"
+            ]
+          },
+          {
+            "condition": "right upper limb parasthesia",
+            "symptoms": [
+              "tingling",
+              "numbness"
+            ],
+            "evidence_text": [
+              "right UL parasthesias since last 3 months"
+            ]
+          },
+          {
+            "condition": "constipation",
+            "symptoms": [
+              "infrequent stools",
+              "hard stools"
+            ],
+            "evidence_text": [
+              "dulcolax prescribed",
+              "SOS for constipation"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2025-04-28",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Mukheem M.",
+          "chief_complaint": "Worsening involuntary movements, postural difficulty x 6 months",
+          "vitals": {
+            "bp": "118/76",
+            "hr": 84,
+            "spo2": 99,
+            "weight_kg": 52,
+            "rr": 16,
+            "temp_f": 98.4
+          },
+          "examination": "Generalized dystonic posturing, increased tone all 4 limbs, dystonic gait. MMSE not assessable.",
+          "labs": {
+            "hb": 12.4,
+            "tsh": 2.1,
+            "ceruloplasmin": 22,
+            "ana": "negative",
+            "creatinine": 0.8
+          },
+          "diagnosis_text": "Generalized dystonia secondary to kernicterus, GDD",
+          "prescription": [
+            "Tetrabenazine 25mg TDS",
+            "Trihexyphenidyl 2mg BD",
+            "Clonazepam 0.5mg HS",
+            "Baclofen 10mg TDS"
+          ],
+          "advice": "Trial of medical management. Functional MRI advised."
+        },
+        {
+          "visit_date": "2025-10-30",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Mukheem M.",
+          "chief_complaint": "Partial response to medications, persistent disability",
+          "vitals": {
+            "bp": "120/78",
+            "hr": 88,
+            "weight_kg": 51
+          },
+          "examination": "Sustained dystonic posturing. BFM dystonia rating scale 42/120.",
+          "labs": {
+            "hb": 12.0,
+            "creatinine": 0.8
+          },
+          "diagnosis_text": "Refractory generalized dystonia, considering DBS / pallidotomy",
+          "prescription": [
+            "Increase tetrabenazine to 25mg QID",
+            "Continue rest"
+          ],
+          "advice": "Neurosurgery referral for bilateral pallidotomy evaluation."
+        },
+        {
+          "visit_date": "2026-03-29",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Mukheem M.",
+          "chief_complaint": "Right upper limb tingling x 3 months, constipation",
+          "vitals": {
+            "bp": "122/76",
+            "hr": 86,
+            "weight_kg": 50
+          },
+          "examination": "BFM 44/120, slight worsening. Right UL paresthesia, sensory normal otherwise.",
+          "labs": {
+            "hb": 11.8,
+            "vitamin_b12": 184,
+            "creatinine": 0.8
+          },
+          "diagnosis_text": "Generalized dystonia + new R UL paresthesia + Vit B12 deficiency",
+          "prescription": [
+            "Mecobalamin 1500mcg OD",
+            "Dulcolax 5mg HS SOS",
+            "Continue dystonia meds"
+          ],
+          "advice": "B12 supplementation. Bilateral pallidotomy under evaluation, pending counselling."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Mukheem M.",
+          "chief_complaint": "Patient and family ready for surgical discussion",
+          "vitals": {
+            "bp": "118/74",
+            "hr": 82
+          },
+          "examination": "Stable. Family discussion ongoing.",
+          "diagnosis_text": "Refractory generalized dystonia, OP admission for bilateral pallidotomy planning",
+          "prescription": [
+            "Continue current"
+          ],
+          "advice": "Admit for pre-op workup. Cardiac, pulmonary clearance needed."
+        }
+      ],
+      "call_history": [],
+      "advised_actions": [
+        {
+          "action_type": "procedure",
+          "title": "Procedure: BILATERAL PALLIDOTOMY",
+          "description": "Prescribed procedure: BILATERAL PALLIDOTOMY",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "ip_admission",
+          "title": "TO PLAN BILATERAL PALLIDOTOMY",
+          "description": "Prescribed op admission: TO PLAN BILATERAL PALLIDOTOMY",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "follow_up",
+          "title": "R/A ONE MONTH",
+          "description": "Prescribed follow up: R/A ONE MONTH",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "referral",
+          "title": "TO CONSULT DR SARKAR, NEURO SURGEON",
+          "description": "Prescribed referral: TO CONSULT DR SARKAR, NEURO SURGEON",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "PACITANE",
+          "description": "Prescribed medication: PACITANE",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "LIOFEN",
+          "description": "Prescribed medication: LIOFEN",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0003",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Prakash T.",
+      "age": 68,
+      "gender": "MALE",
+      "phone": "XXXXXX6441",
+      "workflow_type": "opd",
+      "workflow_status": "follow_up",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "ORTHOPAEDICS",
+        "doctor": "Dr. Chakradhar R.",
+        "op_advised": true,
+        "op_advised_reason": "68-year-old male with advanced osteoarthritis, rotator cuff tear, and prior stroke, planned for arthroscopy, left knee replacement, and right shoulder reverse replacement. Pre-anaesthesia check-up and medical optimisation needed.",
+        "estimated_los_days": 7
+      },
+      "history": {
+        "known_conditions": [
+          "osteoarthritis",
+          "rotator cuff tear",
+          "stroke",
+          "diabetes"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "Left shoulder pain",
+            "symptoms": [
+              "Left shoulder pain"
+            ],
+            "evidence_text": [
+              "History of pain 5 months",
+              "Rotator cuff tear",
+              "MRI findings"
+            ]
+          },
+          {
+            "condition": "Right shoulder pain",
+            "symptoms": [
+              "Right shoulder pain",
+              "Stiffness"
+            ],
+            "evidence_text": [
+              "History of pain 6 years",
+              "Stiffness",
+              "AC joint osteoarthritis",
+              "Shoulder movement painful"
+            ]
+          },
+          {
+            "condition": "Left knee pain",
+            "symptoms": [
+              "Left knee pain"
+            ],
+            "evidence_text": [
+              "Pain 4 years",
+              "Grade 4 osteoarthritis"
+            ]
+          },
+          {
+            "condition": "Lower back ache",
+            "symptoms": [
+              "Lower back ache"
+            ],
+            "evidence_text": [
+              "Non-radiating",
+              "No tingling"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2024-11-04",
+          "department": "GENERAL MEDICINE",
+          "doctor": "Dr. Suresh K.",
+          "chief_complaint": "Sudden weakness right side, slurred speech (recovered 80%)",
+          "vitals": {
+            "bp": "172/98",
+            "hr": 92,
+            "spo2": 96,
+            "weight_kg": 74,
+            "rr": 18
+          },
+          "examination": "Right hemiparesis 4/5, dysarthria. NIHSS 4 at admission.",
+          "labs": {
+            "fbs": 188,
+            "hba1c": 8.4,
+            "ldl": 156,
+            "creatinine": 1.2,
+            "inr": 1.1
+          },
+          "imaging": "MRI: Acute lacunar infarct left corona radiata",
+          "diagnosis_text": "Acute lacunar stroke, T2DM, HTN, dyslipidemia",
+          "prescription": [
+            "Aspirin 75mg OD",
+            "Atorvastatin 40mg HS",
+            "Telmisartan 40mg OD",
+            "Metformin 500mg BD",
+            "Glimepiride 1mg OD"
+          ],
+          "advice": "Stroke rehabilitation. Strict BP/sugar control. F/U in 1 month."
+        },
+        {
+          "visit_date": "2025-11-29",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar R.",
+          "chief_complaint": "Bilateral shoulder pain (R > L), left knee pain x several years",
+          "vitals": {
+            "bp": "148/88",
+            "hr": 78,
+            "weight_kg": 73
+          },
+          "examination": "R shoulder: painful arc, Hawkins +ve. L knee: grade 4 OA, ROM 0-90 deg painful.",
+          "labs": {
+            "fbs": 156,
+            "hba1c": 7.8,
+            "creatinine": 1.1,
+            "rf": "negative",
+            "esr": 32
+          },
+          "imaging": "MRI R shoulder: full thickness rotator cuff tear with retraction. X-ray L knee: grade 4 OA tricompartmental.",
+          "diagnosis_text": "R shoulder rotator cuff tear, L knee grade 4 OA, AC joint OA",
+          "prescription": [
+            "Diclofenac 50mg BD x 7 days",
+            "Pantop 40mg OD",
+            "Glucosamine 750mg BD",
+            "Continue stroke meds"
+          ],
+          "advice": "Surgical opinion for L TKR, R reverse shoulder replacement, L knee arthroscopy."
+        },
+        {
+          "visit_date": "2026-03-14",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar R.",
+          "chief_complaint": "Increasing pain, mobility very limited, patient agreeable to surgery",
+          "vitals": {
+            "bp": "152/90",
+            "hr": 80,
+            "weight_kg": 73
+          },
+          "examination": "Same as before. Walking with stick. Sleep disturbed by pain.",
+          "labs": {
+            "fbs": 162,
+            "hba1c": 7.6,
+            "creatinine": 1.1,
+            "hb": 13.2
+          },
+          "diagnosis_text": "Severe symptomatic L knee OA + R shoulder RCT, OP planned",
+          "prescription": [
+            "Tramadol 50mg HS",
+            "Pregabalin 75mg HS",
+            "PT/OT advised",
+            "Continue rest"
+          ],
+          "advice": "Pre-anesthesia workup. Cardiac clearance (post-stroke). Insulin if needed perioperatively."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar R.",
+          "chief_complaint": "Came for pre-op clearance and admission planning",
+          "vitals": {
+            "bp": "146/86",
+            "hr": 78
+          },
+          "examination": "Same. Cardiac fitness obtained.",
+          "diagnosis_text": "Multiple joint surgery planned: L knee arthroscopy + L TKR + R shoulder reverse arthroplasty (staged)",
+          "prescription": [
+            "Continue current"
+          ],
+          "advice": "Stop aspirin 7 days pre-op. Cost discussion ongoing. Estimated stay 5-7 days."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-05-20",
+          "outcome": "no_answer",
+          "duration_sec": 0,
+          "transcript_summary": "Phone switched off."
+        },
+        {
+          "call_date": "2026-06-07",
+          "outcome": "connected",
+          "duration_sec": 184,
+          "transcript_summary": "Patient said he is currently managing with physiotherapy and pain medications. Pain has decreased somewhat. Wants to delay surgery. Will consider if pain returns. Concerned about stroke history and surgical risk."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "medication",
+          "title": "Tab. lipikind plus",
+          "description": "Prescribed medication: Tab. lipikind plus",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "follow_up",
+          "title": "Follow up",
+          "description": "Prescribed follow up: Follow up",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: Arthroscopy Left shoulder + supraspinatus repair + subacromial decompression + acromioplasty",
+          "description": "Prescribed procedure: Arthroscopy Left shoulder + supraspinatus repair + subacromial decompression + acromioplasty",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: Left knee replacement",
+          "description": "Prescribed procedure: Left knee replacement",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: Right shoulder Reverse replacement",
+          "description": "Prescribed procedure: Right shoulder Reverse replacement",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "ip_admission",
+          "title": "Arthroscopy Left shoulder + supraspinatus repair + subacromial decompression + acromioplasty",
+          "description": "Prescribed op admission: Arthroscopy Left shoulder + supraspinatus repair + subacromial decompression + acromioplasty",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0004",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Arun K.",
+      "age": 22,
+      "gender": "MALE",
+      "phone": "XXXXXX8287",
+      "workflow_type": "opd",
+      "workflow_status": "new",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "NEUROLOGY",
+        "doctor": "Dr. Rahul K.",
+        "op_advised": true,
+        "op_advised_reason": "22-year-old male with recurrent right orbital pain, vomiting, and status migrainosus. IV analgesics started and strong recommendation for ward admission. MRI pituitary advised for further evaluation.",
+        "estimated_los_days": 3
+      },
+      "history": {
+        "known_conditions": [
+          "cluster headache",
+          "migrainosis"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "cluster headache",
+            "symptoms": [
+              "side locked right orbital pain",
+              "tearing",
+              "redness",
+              "throbbing pain",
+              "recurrent right orbital pain",
+              "headache"
+            ],
+            "evidence_text": [
+              "side locked right orbital pain",
+              "tearing",
+              "redness",
+              "throbbing type",
+              "recurrent right orbital pain since 1 month",
+              "headache lasts for an hour"
+            ]
+          },
+          {
+            "condition": "migraine",
+            "symptoms": [
+              "nausea",
+              "vomiting",
+              "erratic sleep"
+            ],
+            "evidence_text": [
+              "nausea",
+              "vomiting",
+              "erratic sleep",
+              "status migranosis"
+            ]
+          },
+          {
+            "condition": "upper respiratory infection",
+            "symptoms": [
+              "cold symptoms",
+              "cough"
+            ],
+            "evidence_text": [
+              "cold symptoms since 1 week",
+              "cough symptoms since 1 week"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2026-01-28",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Rahul K.",
+          "chief_complaint": "Recurrent right side headache x 3 months, throbbing, with redness/tearing",
+          "vitals": {
+            "bp": "126/80",
+            "hr": 82,
+            "spo2": 99,
+            "weight_kg": 68,
+            "rr": 16
+          },
+          "examination": "Neuro exam normal between attacks. CN intact. No papilledema.",
+          "labs": {
+            "hb": 14.8,
+            "creatinine": 0.9,
+            "tsh": 1.8,
+            "esr": 8
+          },
+          "imaging": "MRI brain plain: normal. Sinuses normal.",
+          "diagnosis_text": "Cluster headache (R)",
+          "prescription": [
+            "Verapamil 80mg TDS",
+            "Sumatriptan 50mg SOS",
+            "Oxygen inhalation during attacks"
+          ],
+          "advice": "Headache diary. Avoid triggers. F/U if no improvement."
+        },
+        {
+          "visit_date": "2026-03-29",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Rahul K.",
+          "chief_complaint": "Headaches more frequent, now with nausea and vomiting, sleep disturbed",
+          "vitals": {
+            "bp": "128/82",
+            "hr": 88,
+            "weight_kg": 67
+          },
+          "examination": "Exam normal. Patient distressed.",
+          "labs": {
+            "hb": 14.6,
+            "creatinine": 0.9
+          },
+          "diagnosis_text": "Cluster + migraine overlap, refractory",
+          "prescription": [
+            "Topiramate 25mg titrated",
+            "Continue verapamil",
+            "Domperidone 10mg TDS"
+          ],
+          "advice": "MRI pituitary advised. Prophylaxis trial."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "NEUROLOGY",
+          "doctor": "Dr. Rahul K.",
+          "chief_complaint": "Severe continuous headache x 4 days with persistent vomiting, unable to take orals, URI symptoms",
+          "vitals": {
+            "bp": "132/86",
+            "hr": 96,
+            "spo2": 98,
+            "weight_kg": 65,
+            "rr": 18,
+            "temp_f": 99.8
+          },
+          "examination": "Dehydrated, tearfulness, photophobia. Throat congested. CN intact, no focal deficit.",
+          "labs": {
+            "hb": 14.4,
+            "wbc": 11200,
+            "crp": 18,
+            "creatinine": 1.0,
+            "sodium": 134,
+            "potassium": 3.6
+          },
+          "diagnosis_text": "Status migrainosus with cluster headache and URI",
+          "prescription": [
+            "IV NS 100ml/hr",
+            "IV Ondansetron 4mg TDS",
+            "IV Diclofenac 75mg BD",
+            "IV Methylprednisolone 60mg OD",
+            "Sumatriptan SC SOS"
+          ],
+          "advice": "Strong recommendation for OP admission for IV management and MRI pituitary. Patient and family agree initially."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-04-29",
+          "outcome": "connected",
+          "duration_sec": 168,
+          "transcript_summary": "Patient interested in admission, pending consultation with parents and insurance pre-authorization."
+        },
+        {
+          "call_date": "2026-04-30",
+          "outcome": "connected",
+          "duration_sec": 92,
+          "transcript_summary": "Insurance does not cover migraine admission as deemed not medically necessary by TPA. Patient lacks funds. Declining admission. Will manage as OPD with IV in day care if needed."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "radiology_test",
+          "title": "MRI DYNAMIC PITUTAARY SEQUENCES",
+          "description": "Prescribed radiology test: MRI DYNAMIC PITUTAARY SEQUENCES",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "IV PCM",
+          "description": "Prescribed medication: IV PCM",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "IV KETEROL",
+          "description": "Prescribed medication: IV KETEROL",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "IV PAN",
+          "description": "Prescribed medication: IV PAN",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "ip_admission",
+          "title": "Admission to ward",
+          "description": "Prescribed op admission: Admission to ward",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0005",
+      "uhid": "UHID-MASKED",
+      "name": "Mrs Lakshmi K.",
+      "age": 44,
+      "gender": "FEMALE",
+      "phone": "XXXXXX0344",
+      "workflow_type": "opd",
+      "workflow_status": "follow_up",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "ORTHOPAEDICS",
+        "doctor": "Dr. Arun M.",
+        "op_advised": true,
+        "op_advised_reason": "44-year-old female with MRI-confirmed right knee medial meniscus tear; planned for right knee arthroscopic medial meniscus repair with explicit OP admission advised by orthopaedics consultant.",
+        "estimated_los_days": 3
+      },
+      "history": {
+        "known_conditions": [
+          "meniscus tear",
+          "knee pain"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "right knee pain",
+            "symptoms": [
+              "knee pain"
+            ],
+            "evidence_text": [
+              "reported by patient"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2025-12-29",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Arun M.",
+          "chief_complaint": "R knee pain x 4 months after slip, worse with stairs",
+          "vitals": {
+            "bp": "124/78",
+            "hr": 76,
+            "weight_kg": 64,
+            "spo2": 99
+          },
+          "examination": "R knee: medial joint line tenderness, McMurray +ve, no effusion. ROM full but painful.",
+          "labs": {
+            "hb": 12.6,
+            "creatinine": 0.7,
+            "esr": 14,
+            "rf": "negative"
+          },
+          "diagnosis_text": "R knee medial meniscus injury (clinical)",
+          "prescription": [
+            "Diclofenac 50mg BD x 5 days",
+            "Pantop 40mg OD",
+            "Knee brace",
+            "RICE"
+          ],
+          "advice": "MRI R knee. Physiotherapy. Avoid squatting."
+        },
+        {
+          "visit_date": "2026-03-14",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Arun M.",
+          "chief_complaint": "MRI report review, persistent pain despite PT",
+          "vitals": {
+            "bp": "120/76",
+            "hr": 78,
+            "weight_kg": 64
+          },
+          "examination": "Same findings. Mild quadriceps wasting.",
+          "labs": {
+            "hb": 12.4,
+            "creatinine": 0.7
+          },
+          "imaging": "MRI: Grade 3 medial meniscus tear posterior horn, mild ACL strain. Cartilage intact.",
+          "diagnosis_text": "R knee medial meniscus tear grade 3",
+          "prescription": [
+            "Etoricoxib 60mg OD x 7d",
+            "Continue PT"
+          ],
+          "advice": "Arthroscopic meniscal repair vs partial meniscectomy. Counselled about OP admission."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Arun M.",
+          "chief_complaint": "Decision for surgery, no improvement from PT",
+          "vitals": {
+            "bp": "118/74",
+            "hr": 76
+          },
+          "examination": "Same.",
+          "diagnosis_text": "R knee medial meniscus tear, planned arthroscopic repair",
+          "prescription": [
+            "Continue analgesia"
+          ],
+          "advice": "OP admission for arthroscopic medial meniscus repair. Day-care or 1-night stay."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-05-25",
+          "outcome": "no_answer",
+          "duration_sec": 0,
+          "transcript_summary": "Did not pick up."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "ip_admission",
+          "title": "OP Admission Advised",
+          "description": "Patient recommended for OP admission based on surgical procedure",
+          "due_date": "2026-03-12",
+          "status": "pending"
+        },
+        {
+          "action_type": "lab_test",
+          "title": "MINOR SURGICAL PROFILE",
+          "description": "Prescribed lab test: MINOR SURGICAL PROFILE",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "INJ. ARACHITOL",
+          "description": "Prescribed medication: INJ. ARACHITOL",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: RIGHT KNEE ARTHROSCOPIC MEDIAL MENISCUS REPAIR",
+          "description": "Prescribed procedure: RIGHT KNEE ARTHROSCOPIC MEDIAL MENISCUS REPAIR",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "lab_test",
+          "title": "PAC",
+          "description": "Prescribed lab test: PAC",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0006",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Mallikarjun A.",
+      "age": 44,
+      "gender": "MALE",
+      "phone": "XXXXXX1870",
+      "workflow_type": "opd",
+      "workflow_status": "visited",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "CARDIOLOGY",
+        "doctor": "Dr. Abhishek M.",
+        "op_advised": true,
+        "op_advised_reason": "44-year-old male with large atrial septal defect, moderate-to-severe pulmonary arterial hypertension, and chronic kidney disease on dialysis. Plan for percutaneous ASD device closure with outpatient admission advised.",
+        "estimated_los_days": 3
+      },
+      "history": {
+        "known_conditions": [
+          "hypertension",
+          "ASD",
+          "PAH",
+          "CKD",
+          "family history"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "Shortness of breath on exertion",
+            "symptoms": [
+              "Shortness of breath"
+            ],
+            "evidence_text": [
+              "Symptom reported in complaints"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2024-04-28",
+          "department": "NEPHROLOGY",
+          "doctor": "Dr. Pradeep R.",
+          "chief_complaint": "Routine pre-dialysis review",
+          "vitals": {
+            "bp": "162/96",
+            "hr": 88,
+            "spo2": 96,
+            "weight_kg": 66,
+            "rr": 18
+          },
+          "examination": "AV fistula left forearm, thrill +ve. Mild pedal edema.",
+          "labs": {
+            "creatinine": 8.4,
+            "egfr": 8,
+            "hb": 8.6,
+            "potassium": 5.8,
+            "urea": 142,
+            "calcium": 7.4,
+            "phosphate": 6.2
+          },
+          "diagnosis_text": "ESRD on MHD thrice weekly, secondary HTN, anemia of CKD",
+          "prescription": [
+            "Telmisartan 40mg OD",
+            "Calcium acetate 667mg TDS",
+            "Erythropoietin 4000U SC twice weekly",
+            "Sevelamer 800mg TDS"
+          ],
+          "advice": "Continue MHD MWF. Strict fluid restriction."
+        },
+        {
+          "visit_date": "2025-10-30",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Abhishek M.",
+          "chief_complaint": "Increasing exertional dyspnea, ankle swelling beyond usual",
+          "vitals": {
+            "bp": "148/92",
+            "hr": 96,
+            "spo2": 92,
+            "weight_kg": 70,
+            "rr": 22
+          },
+          "examination": "Loud P2, parasternal heave, fixed split S2. Clubbing absent.",
+          "labs": {
+            "creatinine": 8.8,
+            "hb": 9.2,
+            "potassium": 5.2,
+            "nt_probnp": 1840
+          },
+          "imaging": "2D Echo: Large secundum ASD 24mm, L to R shunt, RV dilated, RVSP 62mmHg, moderate-severe PAH",
+          "diagnosis_text": "Large secundum ASD with moderate-severe PAH on background of ESRD on MHD",
+          "prescription": [
+            "Sildenafil 20mg TDS",
+            "Furosemide 40mg OD non-dialysis days",
+            "Continue rest"
+          ],
+          "advice": "ASD device closure feasibility evaluation. Cardiac MRI advised. Multidisciplinary review."
+        },
+        {
+          "visit_date": "2026-03-29",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Abhishek M.",
+          "chief_complaint": "Dyspnea NYHA III, dialysis tolerance reduced",
+          "vitals": {
+            "bp": "144/88",
+            "hr": 92,
+            "spo2": 91,
+            "weight_kg": 71,
+            "rr": 22
+          },
+          "examination": "Same. RV heave.",
+          "labs": {
+            "creatinine": 9.1,
+            "hb": 8.8,
+            "potassium": 5.6,
+            "nt_probnp": 2240
+          },
+          "imaging": "Cardiac MRI: ASD 24mm, Qp:Qs 2.3, RV volumes increased, suitable for percutaneous closure if rim adequate.",
+          "diagnosis_text": "Large ASD with PAH, suitable for device closure, ESRD on MHD",
+          "prescription": [
+            "Sildenafil 20mg TDS",
+            "Furosemide",
+            "Continue dialysis schedule"
+          ],
+          "advice": "Percutaneous ASD device closure planned. High-risk procedure given PAH and ESRD. Counselled."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Abhishek M.",
+          "chief_complaint": "Final pre-procedure visit, has questions about cost",
+          "vitals": {
+            "bp": "146/90",
+            "hr": 90,
+            "spo2": 92
+          },
+          "examination": "Stable.",
+          "diagnosis_text": "Awaiting OP admission for ASD device closure",
+          "prescription": [
+            "Continue"
+          ],
+          "advice": "Admit. Coordinated dialysis on day before. Cost ~Rs 3.5 lakhs counselled."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-04-29",
+          "outcome": "connected",
+          "duration_sec": 312,
+          "transcript_summary": "Patient very keen but cost is a major issue. Asked if any discount or scheme available. Has CGHS but coverage uncertain for device. Family wants to admit."
+        },
+        {
+          "call_date": "2026-05-28",
+          "outcome": "connected",
+          "duration_sec": 124,
+          "transcript_summary": "Follow-up call. Patient said still trying to arrange funds, has approached relatives. CGHS approval pending. Asked for one more week."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "ip_admission",
+          "title": "Percutaneous ASD device closure",
+          "description": "Prescribed op admission: Percutaneous ASD device closure",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TAB AMTAS (Amlodipine)",
+          "description": "Prescribed medication: TAB AMTAS (Amlodipine)",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TAB AMBRISENTAN",
+          "description": "Prescribed medication: TAB AMBRISENTAN",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TAB NUROKIND LC",
+          "description": "Prescribed medication: TAB NUROKIND LC",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TAB CARDIVAS",
+          "description": "Prescribed medication: TAB CARDIVAS",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: Percutaneous ASD device closure",
+          "description": "Prescribed procedure: Percutaneous ASD device closure",
+          "due_date": "2026-03-31",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0007",
+      "uhid": "UHID-MASKED",
+      "name": "Mrs Sajida B.",
+      "age": 62,
+      "gender": "FEMALE",
+      "phone": "XXXXXX72.0",
+      "workflow_type": "opd",
+      "workflow_status": "visited",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "MEDICAL GASTROENTEROLOGY",
+        "doctor": "Dr. Raghuram K.",
+        "op_advised": true,
+        "op_advised_reason": "62-year-old female with symptomatic gall-stone disease (planned cholecystectomy), erosive and mild chronic gastritis, hypertension, diabetes, hypothyroid, and anemia. Cholecystectomy and colonoscopy are planned; GI surgery consult advised.",
+        "estimated_los_days": 3
+      },
+      "history": {
+        "known_conditions": [
+          "hypertension",
+          "diabetes",
+          "hypothyroid",
+          "anemia",
+          "gallstones"
+        ],
+        "presenting_complaints": [
+          {
+            "condition": "Gallstones",
+            "symptoms": [
+              "Episodic upper right-quadrant pain",
+              "Pain radiating to back and right shoulder"
+            ],
+            "evidence_text": [
+              "Episodic right-upper-quadrant pain",
+              "Pain radiating to back and right shoulder",
+              "GI surgery referral"
+            ]
+          },
+          {
+            "condition": "Gastritis",
+            "symptoms": [
+              "Nausea",
+              "Reduced appetite"
+            ],
+            "evidence_text": [
+              "Diagnosed erosive gastritis",
+              "Nausea",
+              "Reduced appetite"
+            ]
+          },
+          {
+            "condition": "Excess gas formation",
+            "symptoms": [
+              "Excess gas formation"
+            ],
+            "evidence_text": [
+              "Patient reports excess gas formation (30 years)"
+            ]
+          },
+          {
+            "condition": "Abdominal pain",
+            "symptoms": [
+              "Lower abdominal pain"
+            ],
+            "evidence_text": [
+              "Occasional lower abdominal pain"
+            ]
+          }
+        ]
+      },
+      "visit_history": [
+        {
+          "visit_date": "2025-10-30",
+          "department": "GENERAL MEDICINE",
+          "doctor": "Dr. Lakshmi P.",
+          "chief_complaint": "Long-standing gas/indigestion, recent RUQ pain, weight loss 3kg",
+          "vitals": {
+            "bp": "138/84",
+            "hr": 82,
+            "spo2": 98,
+            "weight_kg": 64,
+            "rr": 16
+          },
+          "examination": "Mild tenderness epigastrium. Murphy's sign equivocal. No icterus.",
+          "labs": {
+            "hb": 9.8,
+            "mcv": 76,
+            "fbs": 142,
+            "hba1c": 7.4,
+            "tsh": 6.8,
+            "alt": 38,
+            "ast": 32,
+            "alp": 96,
+            "bilirubin": 0.8,
+            "creatinine": 0.9,
+            "iron": 32,
+            "ferritin": 14
+          },
+          "imaging": "USG abdomen: Multiple gallstones, GB wall normal. No CBD dilatation.",
+          "diagnosis_text": "Symptomatic cholelithiasis, IDA, hypothyroid (sub-optimal), DM, HTN",
+          "prescription": [
+            "Pantoprazole 40mg OD",
+            "Levothyroxine 75mcg increase to 100mcg OD",
+            "Iron + folic acid OD",
+            "Metformin 500mg BD",
+            "Telmisartan 40mg OD"
+          ],
+          "advice": "GI surgery referral. Optimize Hb, TFT before surgery. Endoscopy advised."
+        },
+        {
+          "visit_date": "2026-02-27",
+          "department": "MEDICAL GASTROENTEROLOGY",
+          "doctor": "Dr. Raghuram K.",
+          "chief_complaint": "Endoscopy review, persistent symptoms",
+          "vitals": {
+            "bp": "142/86",
+            "hr": 80,
+            "weight_kg": 63
+          },
+          "examination": "Pale, no fresh tenderness.",
+          "labs": {
+            "hb": 10.6,
+            "fbs": 138,
+            "hba1c": 7.2,
+            "tsh": 4.2,
+            "ferritin": 22
+          },
+          "imaging": "UGI Endoscopy: erosive gastritis antrum, mild chronic gastritis. H pylori +ve.",
+          "diagnosis_text": "Erosive + chronic gastritis (H pylori +ve), cholelithiasis, IDA improving",
+          "prescription": [
+            "Triple therapy x 14 days (Pantop + Amox + Clarithro)",
+            "Continue iron",
+            "Continue thyroxine"
+          ],
+          "advice": "Cholecystectomy after H pylori eradication. Colonoscopy advised given anemia + age."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "MEDICAL GASTROENTEROLOGY",
+          "doctor": "Dr. Raghuram K.",
+          "chief_complaint": "Post H pylori treatment, episodic RUQ pain radiating to back x 1 week",
+          "vitals": {
+            "bp": "140/86",
+            "hr": 84,
+            "weight_kg": 64,
+            "spo2": 98,
+            "temp_f": 98.6
+          },
+          "examination": "Mild RUQ tenderness, Murphy's negative. No jaundice.",
+          "labs": {
+            "hb": 11.2,
+            "fbs": 132,
+            "hba1c": 7.0,
+            "tsh": 3.4,
+            "alt": 42,
+            "alp": 108,
+            "bilirubin": 0.9,
+            "amylase": 88,
+            "lipase": 64
+          },
+          "diagnosis_text": "Symptomatic cholelithiasis post H pylori treatment, ready for surgery",
+          "prescription": [
+            "Pantop 40mg OD",
+            "Continue rest"
+          ],
+          "advice": "Lap cholecystectomy + colonoscopy planned. GI surgery to admit."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-05-12",
+          "outcome": "connected",
+          "duration_sec": 224,
+          "transcript_summary": "Patient says she will visit hospital next month to discuss surgery with GI consultant directly. Currently visiting daughter in Bangalore. Will call back on return."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "medication",
+          "title": "T URSOSOL",
+          "description": "Prescribed medication: T URSOSOL",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "C NEXPRO IT",
+          "description": "Prescribed medication: C NEXPRO IT",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "T UNIENZYME",
+          "description": "Prescribed medication: T UNIENZYME",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "SYP MUCAINE GEL",
+          "description": "Prescribed medication: SYP MUCAINE GEL",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "T THYROX",
+          "description": "Prescribed medication: T THYROX",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "T GLIMPRIDE",
+          "description": "Prescribed medication: T GLIMPRIDE",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0008",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Mehar M.",
+      "age": 30,
+      "gender": "MALE",
+      "phone": "XXXXXX99.0",
+      "workflow_type": "opd",
+      "workflow_status": "visited",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "CARDIOLOGY",
+        "doctor": "Dr. Meeraji R.",
+        "op_advised": true,
+        "op_advised_reason": "",
+        "estimated_los_days": null
+      },
+      "history": {
+        "known_conditions": [],
+        "presenting_complaints": []
+      },
+      "visit_history": [
+        {
+          "visit_date": "2026-02-27",
+          "department": "GENERAL MEDICINE",
+          "doctor": "Dr. Anita S.",
+          "chief_complaint": "Palpitations on exertion, occasional chest tightness, fatigue",
+          "vitals": {
+            "bp": "138/86",
+            "hr": 96,
+            "spo2": 99,
+            "weight_kg": 78,
+            "rr": 16
+          },
+          "examination": "Soft systolic murmur at apex. Otherwise unremarkable.",
+          "labs": {
+            "hb": 14.2,
+            "creatinine": 1.4,
+            "egfr": 64,
+            "fbs": 92,
+            "tsh": 1.8,
+            "urine_protein": "1+"
+          },
+          "imaging": "ECG: Sinus tachycardia, no ST changes",
+          "diagnosis_text": "Palpitations for evaluation, mild renal dysfunction NYD",
+          "prescription": [
+            "Bisoprolol 2.5mg OD",
+            "Pantop 40mg OD"
+          ],
+          "advice": "Echo, Holter, USG KUB. Cardiology + Nephrology referrals."
+        },
+        {
+          "visit_date": "2026-04-14",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Meeraji R.",
+          "chief_complaint": "Worsening palpitations, presyncope episode 3 days back",
+          "vitals": {
+            "bp": "132/82",
+            "hr": 102,
+            "spo2": 98,
+            "weight_kg": 78
+          },
+          "examination": "Same murmur. CVS exam otherwise unremarkable.",
+          "labs": {
+            "creatinine": 1.5,
+            "egfr": 62,
+            "potassium": 4.4,
+            "magnesium": 1.8,
+            "nt_probnp": 320,
+            "tsh": 1.6
+          },
+          "imaging": "Echo: LVEF 55%, mild MVP with mild MR. Holter: 18% PVC burden, occasional NSVT runs.",
+          "diagnosis_text": "Symptomatic ventricular ectopy, MVP, mild renal dysfunction",
+          "prescription": [
+            "Bisoprolol increase 5mg OD",
+            "Continue pantop"
+          ],
+          "advice": "EP study advised. Nephrology workup ongoing. Possible RFA candidate."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "CARDIOLOGY",
+          "doctor": "Dr. Meeraji R.",
+          "chief_complaint": "Pre-EP study workup, nephrology clearance pending",
+          "vitals": {
+            "bp": "130/80",
+            "hr": 88,
+            "weight_kg": 77
+          },
+          "examination": "Stable.",
+          "labs": {
+            "creatinine": 1.5,
+            "urine_acr": 64
+          },
+          "diagnosis_text": "Awaiting EP study, nephrology clearance needed first",
+          "prescription": [
+            "Continue"
+          ],
+          "advice": "Admit for EP study + RFA. Need nephro clearance for contrast/sedation."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-05-06",
+          "outcome": "no_answer",
+          "duration_sec": 0,
+          "transcript_summary": "Patient busy at work, asked to call later. Nephrology clearance noted as required before admission."
+        },
+        {
+          "call_date": "2026-05-14",
+          "outcome": "connected",
+          "duration_sec": 136,
+          "transcript_summary": "Patient said advised by us to obtain nephrology clearance first. He has appointment with nephro next week. Will revert after that."
+        },
+        {
+          "call_date": "2026-05-22",
+          "outcome": "connected",
+          "duration_sec": 64,
+          "transcript_summary": "Brief call - no new updates. Nephro appointment pushed by 10 days due to consultant leave. Will update when seen."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "ip_admission",
+          "title": "Admission Advised",
+          "description": "Patient recommended for OP admission based on clinical assessment",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "PROLOMET XL",
+          "description": "Prescribed medication: PROLOMET XL",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "TELLZY",
+          "description": "Prescribed medication: TELLZY",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "FEBURIC",
+          "description": "Prescribed medication: FEBURIC",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "NODOSIS",
+          "description": "Prescribed medication: NODOSIS",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "medication",
+          "title": "ZYLOCAL D3",
+          "description": "Prescribed medication: ZYLOCAL D3",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0009",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Naresh P.",
+      "age": 78,
+      "gender": "MALE",
+      "phone": "XXXXXX57.0",
+      "workflow_type": "opd",
+      "workflow_status": "new",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "ORTHOPAEDICS",
+        "doctor": "Dr. Chakradhar B.",
+        "op_advised": true,
+        "op_advised_reason": "",
+        "estimated_los_days": null
+      },
+      "history": {
+        "known_conditions": [],
+        "presenting_complaints": []
+      },
+      "visit_history": [
+        {
+          "visit_date": "2025-08-31",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar B.",
+          "chief_complaint": "Bilateral knee pain, worse with activity, mobility reduced",
+          "vitals": {
+            "bp": "146/82",
+            "hr": 76,
+            "weight_kg": 70,
+            "spo2": 97
+          },
+          "examination": "Bilateral knee crepitus, varus deformity, ROM 0-100. Walking with stick.",
+          "labs": {
+            "hb": 12.8,
+            "creatinine": 1.3,
+            "egfr": 58,
+            "fbs": 118,
+            "hba1c": 6.8,
+            "esr": 28
+          },
+          "imaging": "X-ray bilateral knees: grade 3-4 OA with osteophytes, joint space narrowing, varus alignment.",
+          "diagnosis_text": "Bilateral knee OA grade 3-4, age-related, mild renal impairment",
+          "prescription": [
+            "Paracetamol 650mg TDS",
+            "Glucosamine 750mg BD",
+            "Physiotherapy"
+          ],
+          "advice": "Conservative trial. Knee replacement option discussed for future. Avoid NSAIDs given renal function."
+        },
+        {
+          "visit_date": "2026-01-28",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar B.",
+          "chief_complaint": "Pain about same, walking distance reduced to 100m, fall once at home",
+          "vitals": {
+            "bp": "144/84",
+            "hr": 78,
+            "weight_kg": 69
+          },
+          "examination": "Same findings. Quadriceps wasting +.",
+          "labs": {
+            "hb": 12.4,
+            "creatinine": 1.4,
+            "egfr": 56
+          },
+          "diagnosis_text": "Symptomatic bilateral knee OA, deteriorating, fall risk",
+          "prescription": [
+            "Continue PCM",
+            "Tramadol 50mg HS PRN",
+            "Walking stick mandatory"
+          ],
+          "advice": "TKR option re-discussed. Patient deferring."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar B.",
+          "chief_complaint": "Family came to ask about TKR, patient ambivalent",
+          "vitals": {
+            "bp": "142/82",
+            "hr": 76
+          },
+          "examination": "Same. ASA Grade 2-3.",
+          "diagnosis_text": "Bilateral knee OA, family-driven OP discussion",
+          "prescription": [
+            "Continue"
+          ],
+          "advice": "Pre-anaesthesia clearance needed. Cardiac evaluation given age. Renal precautions."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-05-04",
+          "outcome": "connected",
+          "duration_sec": 196,
+          "transcript_summary": "Patient said still has pain but is doing physiotherapy. Plans to come in after a few months. Wants to delay surgery."
+        },
+        {
+          "call_date": "2026-05-09",
+          "outcome": "no_answer",
+          "duration_sec": 0,
+          "transcript_summary": "Did not pick up."
+        },
+        {
+          "call_date": "2026-05-15",
+          "outcome": "connected",
+          "duration_sec": 142,
+          "transcript_summary": "Patient continuing physiotherapy, mild pain, reports pain gradually decreasing. Not keen on surgery currently. Family supportive of patient's choice."
+        },
+        {
+          "call_date": "2026-05-26",
+          "outcome": "connected",
+          "duration_sec": 88,
+          "transcript_summary": "Stable, no change. Will revert if pain worsens. Asked us not to call frequently."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "procedure",
+          "title": "Procedure: Left total knee replacement",
+          "description": "Prescribed procedure: Left total knee replacement",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "ip_admission",
+          "title": "Left total knee replacement",
+          "description": "Prescribed op admission: Left total knee replacement",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "lab_test",
+          "title": "PAC WORKUP",
+          "description": "Prescribed lab test: PAC WORKUP",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "lab_test",
+          "title": "URINE FOR C/S",
+          "description": "Prescribed lab test: URINE FOR C/S",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "lab_test",
+          "title": "CRP",
+          "description": "Prescribed lab test: CRP",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "lab_test",
+          "title": "MAJOR SURGICAL PROFILE",
+          "description": "Prescribed lab test: MAJOR SURGICAL PROFILE",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "patient_id": "P-0010",
+      "uhid": "UHID-MASKED",
+      "name": "Mr Bommareddy S.",
+      "age": 15,
+      "gender": "MALE",
+      "phone": "XXXXXX10.0",
+      "workflow_type": "opd",
+      "workflow_status": "new",
+      "agent_worked_status": "worked",
+      "current_referral": {
+        "visit_date": "2026-04-28",
+        "department": "ORTHOPAEDICS",
+        "doctor": "Dr. Chakradhar B.",
+        "op_advised": true,
+        "op_advised_reason": "",
+        "estimated_los_days": null
+      },
+      "history": {
+        "known_conditions": [],
+        "presenting_complaints": []
+      },
+      "visit_history": [
+        {
+          "visit_date": "2026-01-28",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar B.",
+          "chief_complaint": "Pain and swelling left ankle x 1 month after football injury",
+          "vitals": {
+            "bp": "118/72",
+            "hr": 84,
+            "weight_kg": 56,
+            "spo2": 99
+          },
+          "examination": "L ankle: mild swelling, tenderness lateral malleolus, ATFL stress test +ve, ROM mildly painful.",
+          "labs": {
+            "hb": 13.6,
+            "creatinine": 0.7
+          },
+          "imaging": "X-ray L ankle: no fracture. MRI: partial tear ATFL, mild bone bruise.",
+          "diagnosis_text": "L ankle grade 2 lateral ligament sprain, ATFL partial tear",
+          "prescription": [
+            "Ibuprofen 400mg TDS x 5 days",
+            "Pantop 40mg OD",
+            "RICE",
+            "Functional brace"
+          ],
+          "advice": "Conservative management. Physiotherapy. Surgery only if instability persists."
+        },
+        {
+          "visit_date": "2026-03-29",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar B.",
+          "chief_complaint": "Persistent giving way of L ankle, recurrent twisting episodes",
+          "vitals": {
+            "bp": "120/72",
+            "hr": 82,
+            "weight_kg": 56
+          },
+          "examination": "Anterior drawer +ve, talar tilt mild +ve. Functional instability.",
+          "diagnosis_text": "L ankle chronic instability post ATFL injury",
+          "prescription": [
+            "Continue PT",
+            "Ankle brace for sports"
+          ],
+          "advice": "If instability persists, ATFL repair (arthroscopic) OP procedure can be considered."
+        },
+        {
+          "visit_date": "2026-04-28",
+          "department": "ORTHOPAEDICS",
+          "doctor": "Dr. Chakradhar B.",
+          "chief_complaint": "Family came for surgical decision",
+          "vitals": {
+            "bp": "118/72",
+            "hr": 80
+          },
+          "examination": "Same.",
+          "diagnosis_text": "L ankle chronic instability, OP arthroscopic ligament repair option",
+          "prescription": [
+            "Continue PT"
+          ],
+          "advice": "Surgery vs continued bracing discussed. Family wants to think."
+        }
+      ],
+      "call_history": [
+        {
+          "call_date": "2026-05-04",
+          "outcome": "connected",
+          "duration_sec": 78,
+          "transcript_summary": "Spoke to patient's father (attendant). Said patient has opted for conservative management. Continuing PT. Will return only if instability worsens significantly. Family not keen on surgery for minor."
+        }
+      ],
+      "advised_actions": [
+        {
+          "action_type": "ip_admission",
+          "title": "Admission Advised",
+          "description": "Patient recommended for OP admission based on clinical assessment",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        },
+        {
+          "action_type": "procedure",
+          "title": "Procedure: LEFT CLAVICLE ORIF WITH PLATING",
+          "description": "Prescribed procedure: LEFT CLAVICLE ORIF WITH PLATING",
+          "due_date": "2026-04-03",
+          "status": "pending"
+        }
+      ]
+    }
+  ]
+}
