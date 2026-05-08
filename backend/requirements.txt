@@ -1,0 +1,40 @@
+# Web framework
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+starlette==1.0.0
+
+# Data validation & ORM
+pydantic==2.13.4
+pydantic_core==2.46.4
+pydantic-settings==2.8.1
+sqlmodel==0.0.22
+alembic==1.16.1
+
+# Database drivers
+# Uncomment your preferred DB driver:
+# psycopg2-binary==2.9.10    # PostgreSQL
+# aiosqlite==0.21.0          # SQLite async
+
+# AI / LLM
+cohere==5.15.0
+
+# HTTP client
+httpx==0.28.1
+
+# File handling & forms
+python-multipart==0.0.20
+email-validator==2.2.0
+
+# Auth / secrets
+python-dotenv==1.1.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Utilities
+annotated-types==0.7.0
+anyio==4.13.0
+click==8.3.3
+h11==0.16.0
+idna==3.13
+typing-inspection==0.4.2
+typing_extensions==4.15.0
