@@ -125,6 +125,16 @@ class PatientInsight(BaseModel):
     last_visit_date: str
     days_since_last_visit: int
 
+# ─── Conversion Funnel Summary ───────────────────────
+
+class ConversionFunnelSummary(BaseModel):
+    total_advised: int = 0         # patients with procedure/admission advised
+    contacted: int = 0             # patients with at least 1 call
+    interested: int = 0            # showed interest in calls
+    converted: int = 0             # agreed / admitted
+    declined: int = 0              # explicitly refused
+    pending: int = 0               # unclear / no decision yet
+
 # ─── Dashboard Summary (for cards) ───────────────────
 
 class DashboardSummary(BaseModel):
@@ -134,6 +144,7 @@ class DashboardSummary(BaseModel):
     care_path_variance_count: int
     pending_investigations: int
     cohort_distribution: dict      # {"Poorly Controlled Diabetic": 2, ...}
+    conversion_funnel: ConversionFunnelSummary = ConversionFunnelSummary()
 
 # ─── API Response ─────────────────────────────────────
 
