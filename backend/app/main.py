@@ -34,6 +34,11 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An internal server error occurred.", "error": str(exc)},
     )
 
+@app.get("/", tags=["System"])
+async def root():
+    """Root endpoint."""
+    return {"service": "Docstribe AI Backend", "status": "running", "version": "1.0.0"}
+
 @app.get("/api/health", tags=["System"])
 async def health_check():
     """Basic health check endpoint."""
