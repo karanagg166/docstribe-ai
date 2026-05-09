@@ -5,12 +5,19 @@ from pathlib import Path
 
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-CACHE_DIR = DATA_DIR / ".cache"
+
+# On Vercel (serverless), the filesystem is read-only except /tmp
+IS_VERCEL = os.environ.get("VERCEL") == "1"
+if IS_VERCEL:
+    DATA_DIR = Path("/tmp/docstribe_data")
+    CACHE_DIR = Path("/tmp/docstribe_cache")
+else:
+    DATA_DIR = BASE_DIR / "data"
+    CACHE_DIR = DATA_DIR / ".cache"
 
 # Ensure directories exist
-DATA_DIR.mkdir(exist_ok=True)
-CACHE_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 class Settings(BaseSettings):
     app_env: str = "development"

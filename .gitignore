@@ -57,3 +57,4 @@ pip-delete-this-directory.txt
 # Project specific
 backend/app/data/.cache/
 .vercel
+.env*.local
