@@ -1,0 +1,24 @@
+[project]
+name = "docstribe-backend"
+version = "1.0.0"
+description = "Docstribe AI - OPD Clinical Dashboard API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.0",
+    "uvicorn[standard]>=0.46.0",
+    "pydantic>=2.13.0",
+    "pydantic-settings>=2.8.0",
+    "sqlmodel>=0.0.22",
+    "alembic>=1.16.0",
+    "psycopg2-binary>=2.9.12",
+    "cohere>=5.15.0",
+    "httpx>=0.28.0",
+    "python-multipart>=0.0.20",
+    "email-validator>=2.2.0",
+    "python-dotenv>=1.1.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+]
+
+[tool.vercel]
+entrypoint = "app.main:app"
