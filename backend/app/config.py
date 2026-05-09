@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     
     model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
     
+    # Strip whitespace/newlines from string variables
+    def __init__(self, **data):
+        super().__init__(**data)
+        if isinstance(self.app_env, str):
+            self.app_env = self.app_env.strip()
+        if isinstance(self.allowed_origins, str):
+            self.allowed_origins = self.allowed_origins.strip()
+        if isinstance(self.cohere_api_key, str):
+            self.cohere_api_key = self.cohere_api_key.strip()
+        if isinstance(self.database_url, str):
+            self.database_url = self.database_url.strip()
+    
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
