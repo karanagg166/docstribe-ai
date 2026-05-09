@@ -143,6 +143,8 @@ class DashboardSummary(BaseModel):
     worsening_count: int
     care_path_variance_count: int
     pending_investigations: int
+    conversion_barrier_count: int = 0
+    pending_procedures_count: int = 0
     cohort_distribution: dict      # {"Poorly Controlled Diabetic": 2, ...}
     conversion_funnel: ConversionFunnelSummary = ConversionFunnelSummary()
 

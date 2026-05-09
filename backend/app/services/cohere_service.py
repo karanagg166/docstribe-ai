@@ -12,8 +12,10 @@ See also:
 - fallback_engine.py — deterministic fallback analysis
 """
 
+import asyncio
 import json
 import logging
+import re
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -58,6 +60,76 @@ _SINGLE_PATIENT_SUFFIX = (
     "object {\"type\": \"...\", \"description\": \"...\", \"visit_number\": N} -- NOT a list."
 )
 
+# Max retries for transient Cohere errors
+_MAX_RETRIES = 2
+_RETRY_DELAYS = [1.0, 3.0]  # seconds
+
+
+def _sanitize_response_text(text: str) -> str:
+    """Clean up LLM response text before JSON parsing.
+    
+    Handles:
+    - Markdown code fences (```json ... ```)
+    - BOM characters
+    - Trailing commas before } or ]
+    - Leading/trailing whitespace
+    """
+    text = text.strip()
+    
+    # Remove BOM
+    text = text.lstrip('\ufeff')
+    
+    # Remove markdown code fences
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    
+    text = text.strip()
+    
+    # Remove trailing commas before } or ]
+    text = re.sub(r',\s*([}\]])', r'\1', text)
+    
+    return text
+
+
+async def _call_cohere_with_retry(messages: list) -> str:
+    """Call Cohere API with retry logic for transient errors."""
+    last_error = None
+    
+    for attempt in range(_MAX_RETRIES + 1):
+        try:
+            response = cohere_client.chat(
+                model="command-r-plus-08-2024",
+                messages=messages,
+                response_format={"type": "json_object"},
+            )
+            return response.message.content[0].text.strip()
+        
+        except Exception as e:
+            last_error = e
+            error_str = str(e).lower()
+            
+            # Only retry on transient errors (5xx, rate limit, timeout)
+            is_retryable = any(kw in error_str for kw in [
+                "500", "502", "503", "rate limit", "timeout", "overloaded",
+                "internal server error", "service unavailable"
+            ])
+            
+            if is_retryable and attempt < _MAX_RETRIES:
+                delay = _RETRY_DELAYS[attempt]
+                logger.warning(
+                    f"Cohere API error (attempt {attempt + 1}/{_MAX_RETRIES + 1}): {e}. "
+                    f"Retrying in {delay}s..."
+                )
+                await asyncio.sleep(delay)
+            else:
+                raise
+    
+    raise last_error  # Should never reach here, but safety net
+
 
 async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardResponse:
     """Analyze each patient individually with Cohere, then aggregate the summary.
@@ -82,32 +154,38 @@ async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardRespo
         patient_id = simplified.get("id", f"P-{i+1:04d}")
 
         try:
-            response = cohere_client.chat(
-                model="command-r-plus-08-2024",
-                messages=[
-                    {"role": "system", "content": per_patient_prompt},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Today's date is {today}. "
-                            f"Analyze this ONE patient and return their clinical insight.\n\n"
-                            f"{json.dumps(simplified, indent=2)}"
-                        ),
-                    },
-                ],
-                response_format={"type": "json_object"},
-            )
-
-            response_text = response.message.content[0].text.strip()
-            if response_text.startswith("```json"):
-                response_text = response_text[7:-3]
-            elif response_text.startswith("```"):
-                response_text = response_text[3:-3]
-
+            messages = [
+                {"role": "system", "content": per_patient_prompt},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Today's date is {today}. "
+                        f"Analyze this ONE patient and return their clinical insight.\n\n"
+                        f"{json.dumps(simplified, indent=2)}"
+                    ),
+                },
+            ]
+            
+            response_text = await _call_cohere_with_retry(messages)
+            response_text = _sanitize_response_text(response_text)
+            
             parsed = json.loads(response_text)
             patient_data = extract_patient_data(parsed)
             patient_data = normalize_patient_data(patient_data, simplified)
-            insight = PatientInsight(**patient_data)
+            
+            # Validate against Pydantic schema
+            try:
+                insight = PatientInsight(**patient_data)
+            except Exception as validation_error:
+                logger.warning(
+                    f"{patient_id} — Pydantic validation failed: {validation_error}. "
+                    f"Using deterministic fallback."
+                )
+                fallback_count += 1
+                fallback = generate_fallback_response([raw_patient])
+                if fallback.patients:
+                    all_insights.append(fallback.patients[0])
+                continue
 
             all_insights.append(insight)
             logger.info(
@@ -116,6 +194,13 @@ async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardRespo
                 f"conversion={insight.conversion_status.admission_status}"
             )
 
+        except json.JSONDecodeError as e:
+            logger.warning(f"Cohere returned invalid JSON for {patient_id}: {e}. Using deterministic fallback.")
+            fallback_count += 1
+            fallback = generate_fallback_response([raw_patient])
+            if fallback.patients:
+                all_insights.append(fallback.patients[0])
+                
         except Exception as e:
             logger.warning(f"Cohere failed for {patient_id}: {e}. Using deterministic fallback.")
             fallback_count += 1
@@ -158,6 +243,12 @@ def _aggregate_summary(insights: List[PatientInsight]) -> DashboardSummary:
         for i in insights
     )
 
+    # Conversion barrier count
+    barrier_count = sum(
+        1 for i in insights
+        if i.conversion_status.barrier is not None
+    )
+
     cohort_counts: Dict[str, int] = {}
     for i in insights:
         bucket = i.cohort_bucket.value if hasattr(i.cohort_bucket, "value") else str(i.cohort_bucket)
@@ -171,7 +262,7 @@ def _aggregate_summary(insights: List[PatientInsight]) -> DashboardSummary:
     funnel_interested = sum(1 for i in insights if i.conversion_status.admission_status == "In Progress")
     funnel_converted = sum(1 for i in insights if i.conversion_status.admission_status == "Converted")
     funnel_declined = sum(1 for i in insights if i.conversion_status.admission_status == "Declined")
-    funnel_pending = max(0, funnel_contacted - funnel_interested - funnel_converted - funnel_declined)
+    funnel_pending = max(0, funnel_total - funnel_contacted)
 
     return DashboardSummary(
         total_patients=len(insights),
@@ -180,6 +271,8 @@ def _aggregate_summary(insights: List[PatientInsight]) -> DashboardSummary:
         care_path_variance_count=variance_count,
         pending_investigations=pending_inv,
         cohort_distribution=cohort_counts,
+        conversion_barrier_count=barrier_count,
+        pending_procedures_count=sum(i.pending_actions_summary.pending_procedures for i in insights),
         conversion_funnel=ConversionFunnelSummary(
             total_advised=funnel_total,
             contacted=funnel_contacted,

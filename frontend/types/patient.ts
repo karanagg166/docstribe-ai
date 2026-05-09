@@ -88,6 +88,15 @@ export interface PatientInsight {
     days_since_last_visit: number
 }
 
+export interface ConversionFunnelSummary {
+    total_advised: number
+    contacted: number
+    interested: number
+    converted: number
+    declined: number
+    pending: number
+}
+
 export interface DashboardSummary {
     total_patients: number
     high_risk_count: number
@@ -97,6 +106,7 @@ export interface DashboardSummary {
     conversion_barrier_count?: number
     pending_procedures_count?: number
     cohort_distribution: Record<string, number>
+    conversion_funnel: ConversionFunnelSummary
 }
 
 export interface DashboardResponse {

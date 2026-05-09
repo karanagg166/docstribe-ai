@@ -76,10 +76,10 @@ Return a JSON object that EXACTLY matches this structure (no markdown, no extra 
 --- CALCULATION RULES ---
 
 RISK LEVEL (risk_level field — must be "high", "medium", or "low"):
-- high: Any of: BP systolic > 160, HR > 100, SpO2 < 94, temp > 100.4°F, or urgency reason contains "urgent"/"emergency"/"status" conditions, or 3+ chronic comorbidities with decompensation.
+- high: Any of: BP systolic > 160, HR > 100, SpO2 < 94, temp > 100.4°F, or urgency reason contains "urgent"/"emergency"/"status" conditions, or 3+ chronic comorbidities with decompensation, or ESRD/dialysis/CKD stage 4-5.
 - medium: Stable chronic disease, elective procedures advised, single-system involvement, mildly abnormal labs.
 - low: Normal vitals, routine follow-up, minor/resolving complaints.
-Always cite the specific finding in risk_reasoning.
+Always cite the specific finding in risk_reasoning (e.g., "BP 172/98 is above threshold; SpO2 91% indicates hypoxemia").
 
 PROGRESSION STATUS (progression_status — compare ACROSS visit_summary chronologically):
 - worsening: Vitals deteriorating (BP rising trend, HR increasing), labs worsening (HbA1c rising, creatinine rising), symptoms escalating despite treatment, medications being escalated.
@@ -116,6 +116,21 @@ COHORT BUCKET (cohort_bucket — use EXACTLY one of these values):
 "Cardiac Intervention Pending", "Poorly Controlled Diabetic", "Hypertension Follow-up",
 "CKD Follow-up", "Neurological/Movement Disorder", "Musculoskeletal/Surgical",
 "GI/Hepatobiliary", "High-Risk Multi-Morbid", "Post-Procedure Recovery", "Recurrent Infection", "General Follow-up"
+If the patient does not clearly fit a specific bucket, use "General Follow-up". NEVER invent new bucket names.
+
+DAYS SINCE LAST VISIT: Calculate from the most recent visit_date in visit_history relative to the "today" date provided in the input.
+
+--- OUTPUT GUARDRAILS ---
+
+1. If you are unsure about a field, use the DEFAULT value from the template above. NEVER omit any field.
+2. Every risk_flag, next_action, and progression_metric MUST include a source object with type, description, and visit_number. NEVER return null for source.
+3. source fields in risk_flags, next_actions, and progression_metrics must be a SINGLE object, NOT a list.
+4. source fields in care_path_variance.variances must be a LIST of objects.
+5. risk_level must be exactly "high", "medium", or "low" (lowercase).
+6. progression_status must be exactly "worsening", "improving", "stable", or "recurring" (lowercase).
+7. admission_status must be exactly "Pending", "In Progress", "Declined", or "Converted" (title case).
+8. All integer fields (age, priority, visit_number, days_since_last_visit, pending counts) must be integers, not strings.
+9. progression_metrics[].values must always be a LIST of {"date": "...", "value": "..."} objects.
 
 Do NOT include markdown, code fences, or any text outside the JSON object.
 """

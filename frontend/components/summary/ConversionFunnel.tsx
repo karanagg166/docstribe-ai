@@ -3,13 +3,14 @@ import { DashboardSummary } from "@/types/patient";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export default function ConversionFunnel({ summary }: { summary: DashboardSummary }) {
-  // In a real scenario, this would come from the backend. 
-  // We'll mock it based on total patients for demonstration if backend doesn't provide it yet.
+  const funnel = summary.conversion_funnel;
+  
+  // Create data array from funnel metrics
   const data = [
-    { name: 'Pending', count: summary.pending_procedures_count || Math.floor(summary.total_patients * 0.4) },
-    { name: 'In Progress', count: Math.floor(summary.total_patients * 0.3) },
-    { name: 'Converted', count: Math.floor(summary.total_patients * 0.2) },
-    { name: 'Declined', count: Math.floor(summary.total_patients * 0.1) },
+    { name: 'Pending', count: funnel?.pending || 0 },
+    { name: 'In Progress', count: funnel?.interested || 0 },
+    { name: 'Converted', count: funnel?.converted || 0 },
+    { name: 'Declined', count: funnel?.declined || 0 },
   ];
 
   const COLORS = ['#F59E0B', '#3B82F6', '#10B981', '#F43F5E'];

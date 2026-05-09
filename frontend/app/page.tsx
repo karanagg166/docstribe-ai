@@ -5,7 +5,7 @@ import { usePatientDetail } from "@/hooks/usePatientDetail";
 import DashboardShell from "@/components/layout/DashboardShell";
 import SummaryCards from "@/components/summary/SummaryCards";
 import FilterBar from "@/components/worklist/FilterBar";
-import PatientWorklist from "@/components/worklist/PatientWorklist";
+import PatientWorklist, { PatientWorklistSkeleton } from "@/components/worklist/PatientWorklist";
 import PatientDetailPanel from "@/components/detail/PatientDetailPanel";
 import CohortDistribution from "@/components/summary/CohortDistribution";
 import ConversionFunnel from "@/components/summary/ConversionFunnel";
@@ -34,10 +34,23 @@ export default function DashboardPage() {
   return (
     <DashboardShell>
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            <p className="text-sm text-text-muted animate-pulse">Analyzing clinical data...</p>
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="glass-card rounded-xl p-6 h-[120px] animate-pulse bg-slate-50"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="glass-card rounded-xl p-6 h-[300px] animate-pulse bg-slate-50"></div>
+             <div className="glass-card rounded-xl p-6 h-[300px] animate-pulse bg-slate-50"></div>
+          </div>
+          <div className="glass-card rounded-xl overflow-hidden">
+             <div className="p-4 border-b border-slate-100 flex gap-4">
+               <div className="h-10 w-64 bg-slate-100 rounded-lg animate-pulse" />
+               <div className="h-10 w-32 bg-slate-100 rounded-lg animate-pulse" />
+               <div className="h-10 w-32 bg-slate-100 rounded-lg animate-pulse" />
+             </div>
+             <PatientWorklistSkeleton />
           </div>
         </div>
       ) : error ? (

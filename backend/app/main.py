@@ -42,7 +42,12 @@ async def root():
 @app.get("/api/health", tags=["System"])
 async def health_check():
     """Basic health check endpoint."""
-    return {"status": "ok", "environment": settings.app_env}
+    cohere_status = "configured" if settings.cohere_api_key else "missing"
+    return {
+        "status": "ok", 
+        "environment": settings.app_env,
+        "cohere_api_key": cohere_status
+    }
 
 # Include routers
 app.include_router(analyze.router, prefix="/api", tags=["Analysis"])

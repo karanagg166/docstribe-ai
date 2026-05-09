@@ -111,25 +111,56 @@ function PatientRow({ patient, onClick }: { patient: PatientInsight, onClick: ()
   );
 }
 
-// Temporary inline for missing icon
-function SearchX(props: React.SVGProps<SVGSVGElement>) {
+import { SearchX } from "lucide-react";
+
+export function PatientWorklistSkeleton() {
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m13.5 8.5-5 5" />
-      <path d="m8.5 8.5 5 5" />
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  )
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm whitespace-nowrap">
+        <thead className="bg-slate-50 text-slate-500 border-b border-[var(--color-border)]">
+          <tr>
+            <th className="px-4 py-3 font-medium">Rank</th>
+            <th className="px-4 py-3 font-medium">Patient</th>
+            <th className="px-4 py-3 font-medium">Condition</th>
+            <th className="px-4 py-3 font-medium">Cohort</th>
+            <th className="px-4 py-3 font-medium">Risk</th>
+            <th className="px-4 py-3 font-medium">Trend</th>
+            <th className="px-4 py-3 font-medium">Variances</th>
+            <th className="px-4 py-3 font-medium text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[var(--color-border)] bg-white animate-pulse">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <tr key={i}>
+              <td className="px-4 py-4">
+                <div className="h-6 w-6 rounded-full bg-slate-200" />
+              </td>
+              <td className="px-4 py-4">
+                <div className="h-4 w-32 bg-slate-200 rounded mb-2" />
+                <div className="h-3 w-24 bg-slate-100 rounded" />
+              </td>
+              <td className="px-4 py-4">
+                <div className="h-4 w-40 bg-slate-200 rounded" />
+              </td>
+              <td className="px-4 py-4">
+                <div className="h-6 w-24 bg-slate-200 rounded-md" />
+              </td>
+              <td className="px-4 py-4">
+                <div className="h-6 w-16 bg-slate-200 rounded-md" />
+              </td>
+              <td className="px-4 py-4">
+                <div className="h-4 w-20 bg-slate-200 rounded" />
+              </td>
+              <td className="px-4 py-4">
+                <div className="h-4 w-24 bg-slate-200 rounded" />
+              </td>
+              <td className="px-4 py-4 text-right">
+                <div className="h-4 w-4 bg-slate-200 rounded ml-auto" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
