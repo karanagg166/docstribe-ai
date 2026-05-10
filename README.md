@@ -88,3 +88,9 @@ If Cohere said "medium risk" but `risk_engine.py` bumped it to high because SpO2
 
 **5. Give the prompt some examples of good vs bad output**
 The prompt currently has no examples — it just describes the rules. Adding 2-3 annotated patient examples (here's a good risk summary, here's what a bad one looks like) would make Cohere's clinical language more consistent and reduce vague outputs like "patient should be monitored."
+
+**6. Store processed results in a database instead of re-running the LLM every time**
+Right now every dashboard load hits Cohere, burns tokens, and waits on the API. The fix is simple — once a patient's record is processed, store the output in something like NeonDB (serverless Postgres). Next time the same patient is requested, serve it from the DB. Only re-run the LLM if the patient has a new visit or a call log update since the last processed timestamp. For 10 patients this doesn't matter much, but at 200 patients with coordinators hitting the dashboard all day, you're paying for and waiting on the same LLM call repeatedly for no reason.
+
+**7. Fix the data error on P-0010 and surface it visibly**
+The system already detects that P-0010's advised procedure (`LEFT CLAVICLE ORIF`) doesn't match the visit diagnosis (ankle instability). But it only logs it silently. A coordinator acting on that advised action would be doing the wrong thing. This should show as a visible warning on the dashboard before anyone touches it.

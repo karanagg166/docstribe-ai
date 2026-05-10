@@ -30,7 +30,6 @@ from app.services.clinical_rules import (
     TRACKABLE_VITALS,
     MULTI_MORBID_CONDITION_COUNT,
     URGENCY_KEYWORDS,
-    BARRIER_KEYWORDS,
     CONVERSION_DECLINED_KEYWORDS,
     CONVERSION_FINANCIAL_KEYWORDS,
     CONVERSION_DEFERRING_KEYWORDS,
@@ -498,18 +497,8 @@ def _build_variances(advised: list, call_history: list) -> List[VarianceDetail]:
             source=[SourceTrace(type="visit_note", description="Call log", visit_number=0)],
         ))
 
-    barrier_keywords = BARRIER_KEYWORDS
-    for c in call_history:
-        transcript = c.get("transcript_summary", "").lower()
-        for kw, label in barrier_keywords.items():
-            if kw in transcript:
-                variances.append(VarianceDetail(
-                    description=label,
-                    expected_action="Patient proceeds with advised procedure/admission",
-                    actual_finding=c.get("transcript_summary", "")[:120],
-                    source=[SourceTrace(type="visit_note", description=c.get("transcript_summary", "")[:80], visit_number=0)],
-                ))
-                break  # One variance per call
+    # NOTE: Financial/insurance barriers and patient deferral are tracked
+    # via conversion_status, NOT as clinical variances.
 
     return variances
 

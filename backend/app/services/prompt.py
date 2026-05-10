@@ -97,9 +97,11 @@ CARE PATH VARIANCE (care_path_variance.detected = true if ANY of these apply):
 1. Patient has 2 or more pending advised actions (procedures, admissions, referrals, radiology tests).
 2. A procedure or admission has a due_date that has already passed and status is still "pending".
 3. Call logs show the patient declined treatment (keywords: declined, not interested, refuses).
-4. Call logs show a financial or insurance barrier (keywords: cost, insurance, funds, afford).
-5. Call logs show the patient is deferring/avoiding (keywords: delay, wait, later, managing, physiotherapy, hometown).
-6. Multiple no_answer call outcomes (patient unreachable).
+4. Multiple no_answer call outcomes (patient unreachable).
+5. Lab values worsening beyond threshold delta across visits.
+6. Follow-up gap > 6 months for chronic disease cohorts.
+7. Missing baseline labs for chronic cohorts (e.g., no HbA1c for diabetic patients).
+NOTE: Financial/insurance barriers and patient deferral are NOT variances — they belong in conversion_status.
 For each detected variance, create a VarianceDetail object with description, expected_action, actual_finding, and source.
 
 CONVERSION STATUS (conversion_status.admission_status options: "Converted", "In Progress", "Declined", "Pending"):

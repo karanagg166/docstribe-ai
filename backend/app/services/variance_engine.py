@@ -1,8 +1,6 @@
 from app.models.schemas import CarePathVariance, VarianceDetail, SourceTrace
 from app.services.clinical_rules import (
     CONVERSION_DECLINED_KEYWORDS,
-    CONVERSION_FINANCIAL_KEYWORDS,
-    CONVERSION_DEFERRING_KEYWORDS,
     LAB_THRESHOLDS,
     match_cohort
 )
@@ -16,17 +14,15 @@ def detect_variances(patient: dict) -> CarePathVariance:
     """
     Rule-based variance detection as validation layer.
     
-    Detects:
+    Detects clinical care path variances only (NOT financial/conversion barriers):
     1. Overdue advised actions (due_date in the past, status still "pending")
     2. Multiple pending actions (2+ pending)
-    3. Call log: patient declined
-    4. Call log: financial/insurance barrier
-    5. Call log: patient deferring/avoiding
-    6. Call log: patient unreachable (2+ no_answer)
-    7. Lab trend crossing threshold delta
-    8. Follow-up gap > 6 months for chronic cohorts
-    9. Missing baseline labs for chronic cohorts
-    10. Medication escalation (multiple new meds with no follow-up)
+    3. Call log: patient declined treatment
+    4. Call log: patient unreachable (2+ no_answer)
+    5. Lab trend crossing threshold delta
+    6. Follow-up gap > 6 months for chronic cohorts
+    7. Missing baseline labs for chronic cohorts
+    8. Medication escalation (multiple new meds with no follow-up)
     """
     variances: List[VarianceDetail] = []
     today = date.today()
@@ -104,31 +100,8 @@ def detect_variances(patient: dict) -> CarePathVariance:
                 )]
             ))
         
-        # Financial barrier detection
-        if any(kw in summary for kw in CONVERSION_FINANCIAL_KEYWORDS):
-            variances.append(VarianceDetail(
-                description="Financial/insurance barrier identified",
-                expected_action="Clear financial pathway for admission (insurance approval, payment plan)",
-                actual_finding=f"Call on {call_date}: Financial or insurance concern raised",
-                source=[SourceTrace(
-                    type="visit_note",
-                    description=f"Call log: {summary[:100]}",
-                    visit_number=len(visit_history)
-                )]
-            ))
-        
-        # Deferral detection
-        if any(kw in summary for kw in CONVERSION_DEFERRING_KEYWORDS):
-            variances.append(VarianceDetail(
-                description="Patient deferring/avoiding treatment",
-                expected_action="Timely scheduling of advised procedure",
-                actual_finding=f"Call on {call_date}: Patient indicated deferral or avoidance",
-                source=[SourceTrace(
-                    type="visit_note",
-                    description=f"Call log: {summary[:100]}",
-                    visit_number=len(visit_history)
-                )]
-            ))
+        # NOTE: Financial/insurance barriers and patient deferral are tracked
+        # via conversion_status, NOT as clinical variances.
     
     # Unreachable patient (2+ no_answer)
     if no_answer_count >= 2:
