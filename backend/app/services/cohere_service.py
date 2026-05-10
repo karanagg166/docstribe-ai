@@ -37,6 +37,7 @@ from app.services.patient_transformer import (
     simplify_patients,
 )
 from app.services.prompt import SYSTEM_PROMPT
+from app.services.variance_engine import detect_variances
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +175,19 @@ async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardRespo
                 
                 # Validate against Pydantic schema
                 insight = PatientInsight(**patient_data)
+                
+                # --- HYBRID AUGMENTATION: Rule-based variance check ---
+                # The rule engine is deterministic and captures strict clinical logic 
+                # (like overdue actions) that the LLM might occasionally miss.
+                rule_variance = detect_variances(raw_patient)
+                if rule_variance.detected:
+                    # If rules found something, merge them
+                    existing_desc = [v.description for v in insight.care_path_variance.variances]
+                    for rv in rule_variance.variances:
+                        if rv.description not in existing_desc:
+                            insight.care_path_variance.variances.append(rv)
+                    
+                    insight.care_path_variance.detected = True
                 
                 logger.info(
                     f"{patient_id} — risk={insight.risk_level}, "
