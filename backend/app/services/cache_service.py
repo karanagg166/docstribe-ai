@@ -25,10 +25,18 @@ def _get_cache_file_path() -> str:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     return CACHE_DIR / "insights_cache.json"
 
+# Update this version whenever clinical logic or prompts change to invalidate the cache
+LOGIC_VERSION = "v1.1-deterministic-logic"
+
 def calculate_data_hash(data: Any) -> str:
-    """Calculate an MD5 hash of the data structure to detect changes."""
+    """Calculate an MD5 hash of the data structure + logic version to detect changes."""
     try:
-        data_str = json.dumps(data, sort_keys=True, default=_json_serializer)
+        # Combine data with logic version to ensure code changes trigger a refresh
+        combined_data = {
+            "version": LOGIC_VERSION,
+            "data": data
+        }
+        data_str = json.dumps(combined_data, sort_keys=True, default=_json_serializer)
         return hashlib.md5(data_str.encode()).hexdigest()
     except Exception as e:
         logger.error(f"Failed to calculate hash: {e}")
