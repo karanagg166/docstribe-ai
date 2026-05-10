@@ -36,8 +36,13 @@ export function useStreamingDashboard() {
     if (hasConnected.current) return;
     hasConnected.current = true;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-    const url = `${apiUrl}/dashboard/stream`;
+    // SSE must connect directly to the backend — Next.js rewrites buffer
+    // the response, which breaks streaming. In production, use the public
+    // backend URL; locally, the /api proxy works fine for dev.
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const url = backendUrl
+      ? `${backendUrl}/dashboard/stream`
+      : '/api/dashboard/stream';
 
     setState(prev => ({
       ...prev,
