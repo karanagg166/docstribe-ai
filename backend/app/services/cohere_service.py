@@ -132,6 +132,69 @@ async def _call_cohere_with_retry(messages: list) -> str:
     raise last_error  # Should never reach here, but safety net
 
 
+async def _analyze_single_patient(
+    index: int,
+    simplified: Dict[str, Any],
+    raw_patient: Dict[str, Any],
+    prompt: str,
+    today_str: str,
+    semaphore: asyncio.Semaphore,
+) -> PatientInsight:
+    """Analyze one patient via Cohere, with deterministic fallback on any error."""
+    patient_id = simplified.get("id", f"P-{index+1:04d}")
+
+    async with semaphore:
+        try:
+            messages = [
+                {"role": "system", "content": prompt},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Today's date is {today_str}. "
+                        f"Analyze this ONE patient and return their clinical insight.\n\n"
+                        f"{json.dumps(simplified, indent=2)}"
+                    ),
+                },
+            ]
+
+            response_text = await _call_cohere_with_retry(messages)
+            response_text = _sanitize_response_text(response_text)
+
+            parsed = json.loads(response_text)
+            patient_data = extract_patient_data(parsed)
+            patient_data = normalize_patient_data(patient_data, simplified)
+
+            # Validate against Pydantic schema
+            insight = PatientInsight(**patient_data)
+
+            # --- HYBRID AUGMENTATION: Rule-based variance check ---
+            # The rule engine is deterministic and captures strict clinical logic
+            # (like overdue actions) that the LLM might occasionally miss.
+            rule_variance = detect_variances(raw_patient)
+            if rule_variance.detected:
+                existing_desc = [v.description for v in insight.care_path_variance.variances]
+                for rv in rule_variance.variances:
+                    if rv.description not in existing_desc:
+                        insight.care_path_variance.variances.append(rv)
+                insight.care_path_variance.detected = True
+
+            logger.info(
+                f"{patient_id} — risk={insight.risk_level}, "
+                f"variance={insight.care_path_variance.detected}, "
+                f"conversion={insight.conversion_status.admission_status}"
+            )
+            return insight
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"Cohere returned invalid JSON for {patient_id}: {e}. Using deterministic fallback.")
+        except Exception as e:
+            logger.warning(f"Cohere failed/invalid for {patient_id}: {e}. Using deterministic fallback.")
+
+        # Fallback on any error
+        fallback = generate_fallback_response([raw_patient])
+        return fallback.patients[0] if fallback.patients else None
+
+
 async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardResponse:
     """Analyze each patient individually with Cohere, then aggregate the summary.
 
@@ -146,87 +209,21 @@ async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardRespo
     today = datetime.utcnow().strftime("%Y-%m-%d")
     simplified_patients = simplify_patients(patients)
     per_patient_prompt = SYSTEM_PROMPT + _SINGLE_PATIENT_SUFFIX
-
     semaphore = asyncio.Semaphore(5)
 
-    async def _process_patient(i: int, simplified: Dict[str, Any], raw_patient: Dict[str, Any]) -> PatientInsight:
-        patient_id = simplified.get("id", f"P-{i+1:04d}")
-        
-        async with semaphore:
-            try:
-                messages = [
-                    {"role": "system", "content": per_patient_prompt},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"Today's date is {today}. "
-                            f"Analyze this ONE patient and return their clinical insight.\n\n"
-                            f"{json.dumps(simplified, indent=2)}"
-                        ),
-                    },
-                ]
-                
-                response_text = await _call_cohere_with_retry(messages)
-                response_text = _sanitize_response_text(response_text)
-                
-                parsed = json.loads(response_text)
-                patient_data = extract_patient_data(parsed)
-                patient_data = normalize_patient_data(patient_data, simplified)
-                
-                # Validate against Pydantic schema
-                insight = PatientInsight(**patient_data)
-                
-                # --- HYBRID AUGMENTATION: Rule-based variance check ---
-                # The rule engine is deterministic and captures strict clinical logic 
-                # (like overdue actions) that the LLM might occasionally miss.
-                rule_variance = detect_variances(raw_patient)
-                if rule_variance.detected:
-                    # If rules found something, merge them
-                    existing_desc = [v.description for v in insight.care_path_variance.variances]
-                    for rv in rule_variance.variances:
-                        if rv.description not in existing_desc:
-                            insight.care_path_variance.variances.append(rv)
-                    
-                    insight.care_path_variance.detected = True
-                
-                logger.info(
-                    f"{patient_id} — risk={insight.risk_level}, "
-                    f"variance={insight.care_path_variance.detected}, "
-                    f"conversion={insight.conversion_status.admission_status}"
-                )
-                return insight
-                
-            except json.JSONDecodeError as e:
-                logger.warning(f"Cohere returned invalid JSON for {patient_id}: {e}. Using deterministic fallback.")
-            except Exception as e:
-                logger.warning(f"Cohere failed/invalid for {patient_id}: {e}. Using deterministic fallback.")
-                
-            # Fallback on any error
-            fallback = generate_fallback_response([raw_patient])
-            return fallback.patients[0] if fallback.patients else None
-
-    # Run all tasks concurrently
     tasks = [
-        _process_patient(i, simplified_patients[i], patients[i])
+        _analyze_single_patient(i, simplified_patients[i], patients[i], per_patient_prompt, today, semaphore)
         for i in range(len(simplified_patients))
     ]
     results = await asyncio.gather(*tasks)
 
-    all_insights = []
-    fallback_count = 0
-    for r in results:
-        if r is None:
-            fallback_count += 1
-        else:
-            all_insights.append(r)
-            # We can't strictly distinguish fallback from cohere success here without altering the object,
-            # but since we log the errors in _process_patient, it's fine.
+    all_insights = [r for r in results if r is not None]
 
     if not all_insights:
         logger.error("No insights generated. Returning full deterministic response.")
         return generate_fallback_response(patients)
 
-    summary = _aggregate_summary(all_insights)
+    summary = aggregate_summary(all_insights)
     logger.info(
         f"Analysis complete — {len(all_insights)} patients, "
         f"variance={summary.care_path_variance_count}, "
@@ -246,7 +243,48 @@ async def analyze_all_patients(patients: List[Dict[str, Any]]) -> DashboardRespo
     )
 
 
-def _aggregate_summary(insights: List[PatientInsight]) -> DashboardSummary:
+async def stream_patient_analyses(patients: List[Dict[str, Any]]):
+    """Async generator that yields PatientInsight objects as each one completes.
+
+    Uses an asyncio.Queue so results stream to the caller the moment any
+    patient finishes analysis, regardless of its index in the input list.
+    Falls back to the deterministic engine when Cohere is unavailable.
+    """
+    if not cohere_client:
+        logger.warning("Cohere API key not configured. Streaming deterministic responses.")
+        fallback = generate_fallback_response(patients)
+        for p in fallback.patients:
+            yield p
+        return
+
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    simplified_patients = simplify_patients(patients)
+    per_patient_prompt = SYSTEM_PROMPT + _SINGLE_PATIENT_SUFFIX
+    semaphore = asyncio.Semaphore(10)  # higher concurrency for streaming
+    total = len(patients)
+
+    queue: asyncio.Queue = asyncio.Queue()
+
+    async def _process_and_enqueue(i: int):
+        result = await _analyze_single_patient(
+            i, simplified_patients[i], patients[i], per_patient_prompt, today, semaphore,
+        )
+        await queue.put(result)
+
+    # Fire all tasks concurrently
+    tasks = [asyncio.create_task(_process_and_enqueue(i)) for i in range(total)]
+
+    # Yield each result the moment it arrives
+    for _ in range(total):
+        insight = await queue.get()
+        if insight is not None:
+            yield insight
+
+    # Ensure all tasks are cleaned up
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+def aggregate_summary(insights: List[PatientInsight]) -> DashboardSummary:
     """Deterministically compute DashboardSummary from a list of PatientInsight objects."""
     high = sum(1 for i in insights if i.risk_level == RiskLevel.HIGH)
     worsening = sum(1 for i in insights if i.progression_status == ProgressionStatus.WORSENING)
