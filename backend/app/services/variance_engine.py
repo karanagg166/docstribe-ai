@@ -1,6 +1,8 @@
 from app.models.schemas import CarePathVariance, VarianceDetail, SourceTrace
 from app.services.clinical_rules import (
     CONVERSION_DECLINED_KEYWORDS,
+    CONVERSION_FINANCIAL_KEYWORDS,
+    CONVERSION_DEFERRING_KEYWORDS,
     LAB_THRESHOLDS,
     match_cohort
 )
@@ -87,18 +89,22 @@ def detect_variances(patient: dict) -> CarePathVariance:
             no_answer_count += 1
             continue
         
-        # Decline detection
+        # Decline detection — exclude financial/insurance/deferral reasons
         if any(kw in summary for kw in CONVERSION_DECLINED_KEYWORDS):
-            variances.append(VarianceDetail(
-                description="Patient declined treatment/admission",
-                expected_action="Patient acceptance of advised procedure/admission",
-                actual_finding=f"Call on {call_date}: Patient expressed refusal or disinterest",
-                source=[SourceTrace(
-                    type="visit_note",
-                    description=f"Call log: {summary[:100]}",
-                    visit_number=len(visit_history)
-                )]
-            ))
+            is_financial_or_deferral = any(
+                fkw in summary for fkw in CONVERSION_FINANCIAL_KEYWORDS + CONVERSION_DEFERRING_KEYWORDS
+            )
+            if not is_financial_or_deferral:
+                variances.append(VarianceDetail(
+                    description="Patient declined treatment/admission",
+                    expected_action="Patient acceptance of advised procedure/admission",
+                    actual_finding=f"Call on {call_date}: Patient expressed refusal or disinterest",
+                    source=[SourceTrace(
+                        type="visit_note",
+                        description=f"Call log: {summary[:100]}",
+                        visit_number=len(visit_history)
+                    )]
+                ))
         
         # NOTE: Financial/insurance barriers and patient deferral are tracked
         # via conversion_status, NOT as clinical variances.

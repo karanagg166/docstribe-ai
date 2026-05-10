@@ -26,7 +26,7 @@ def _get_cache_file_path() -> str:
     return CACHE_DIR / "insights_cache.json"
 
 # Update this version whenever clinical logic or prompts change to invalidate the cache
-LOGIC_VERSION = "v1.5-clinical-variance-only"
+LOGIC_VERSION = "v1.6-exclude-financial-variance"
 
 def calculate_data_hash(data: Any) -> str:
     """Calculate an MD5 hash of the data structure + logic version to detect changes."""

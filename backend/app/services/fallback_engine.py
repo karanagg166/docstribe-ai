@@ -488,7 +488,30 @@ def _build_variances(advised: list, call_history: list) -> List[VarianceDetail]:
         ))
 
     # Call-based variances
-    no_answer_count = sum(1 for c in call_history if c.get("outcome") == "no_answer" or c.get("call_status") == "no_answer")
+    no_answer_count = 0
+    for call in call_history:
+        outcome = str(call.get("outcome", "")).lower()
+        call_status = str(call.get("call_status", "")).lower()
+        summary = str(call.get("summary", call.get("transcript_summary", ""))).lower()
+        call_date = call.get("date", call.get("call_date", ""))
+
+        if outcome in ("no_answer", "no answer") or call_status == "no_answer":
+            no_answer_count += 1
+            continue
+
+        # Decline detection — exclude financial/insurance/deferral reasons
+        if any(kw in summary for kw in CONVERSION_DECLINED_KEYWORDS):
+            is_financial_or_deferral = any(
+                fkw in summary for fkw in CONVERSION_FINANCIAL_KEYWORDS + CONVERSION_DEFERRING_KEYWORDS
+            )
+            if not is_financial_or_deferral:
+                variances.append(VarianceDetail(
+                    description="Patient declined advised treatment/admission",
+                    expected_action="Patient proceeds with clinical recommendation",
+                    actual_finding=f"Call on {call_date}: Patient expressed refusal (non-financial)",
+                    source=[SourceTrace(type="visit_note", description=f"Call log: {summary[:80]}", visit_number=0)],
+                ))
+
     if no_answer_count >= 2:
         variances.append(VarianceDetail(
             description="Patient unreachable — multiple call attempts unanswered",
