@@ -12,52 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Valid cohort bucket values (must match CohortBucket enum)
-_VALID_COHORTS = {
-    "Cardiac Intervention Pending",
-    "Poorly Controlled Diabetic",
-    "Hypertension Follow-up",
-    "CKD Follow-up",
-    "Neurological/Movement Disorder",
-    "Recurrent Infection",
-    "Post-Procedure Recovery",
-    "High Utilization OPD",
-    "General Follow-up",
-    "Musculoskeletal/Surgical",
-    "GI/Hepatobiliary",
-    "High-Risk Multi-Morbid",
-}
-
-# Fuzzy mapping for common LLM misspellings / variations
-_COHORT_FUZZY_MAP: Dict[str, str] = {
-    "cardiac": "Cardiac Intervention Pending",
-    "diabetic": "Poorly Controlled Diabetic",
-    "diabetes": "Poorly Controlled Diabetic",
-    "hypertension": "Hypertension Follow-up",
-    "htn": "Hypertension Follow-up",
-    "ckd": "CKD Follow-up",
-    "kidney": "CKD Follow-up",
-    "renal": "CKD Follow-up",
-    "neuro": "Neurological/Movement Disorder",
-    "movement": "Neurological/Movement Disorder",
-    "dystonia": "Neurological/Movement Disorder",
-    "parkinson": "Neurological/Movement Disorder",
-    "ortho": "Musculoskeletal/Surgical",
-    "musculoskeletal": "Musculoskeletal/Surgical",
-    "surgical": "Musculoskeletal/Surgical",
-    "joint": "Musculoskeletal/Surgical",
-    "gi": "GI/Hepatobiliary",
-    "hepat": "GI/Hepatobiliary",
-    "liver": "GI/Hepatobiliary",
-    "gastro": "GI/Hepatobiliary",
-    "infection": "Recurrent Infection",
-    "post-op": "Post-Procedure Recovery",
-    "recovery": "Post-Procedure Recovery",
-    "multi-morbid": "High-Risk Multi-Morbid",
-    "multimorbid": "High-Risk Multi-Morbid",
-}
-
-
+from app.services.clinical_rules import COHORT_RULES, DEFAULT_COHORT, match_cohort
 def simplify_patients(patients: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Build a compact but COMPLETE patient payload for Cohere.
 
@@ -98,12 +53,21 @@ def simplify_patients(patients: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "prescription": prescription,
                 "advice": v.get("advice"),
             })
+            
+        # Optimize payload for chronic patients by keeping only the 3 most recent visits
+        department = (referral.get("department") or "").lower()
+        conditions = " ".join(history.get("known_conditions", [])).lower()
+        primary = " ".join([c.get("condition", "") for c in history.get("presenting_complaints", [])]).lower()
+        cohort = match_cohort(department, conditions, primary, len(history.get("known_conditions", [])))
+        
+        chronic_cohorts = ["Poorly Controlled Diabetic", "Hypertension Follow-up", "CKD Follow-up"]
+        if cohort in chronic_cohorts and len(visit_summary) > 3:
+            visit_summary = visit_summary[-3:]
 
         call_summary = [
             {
                 "date": c.get("call_date"),
                 "outcome": c.get("outcome") or c.get("call_status"),
-                "duration_sec": c.get("duration_sec"),
                 "summary": c.get("transcript_summary"),
             }
             for c in call_history
@@ -182,29 +146,36 @@ _PROG_MAP: Dict[str, str] = {
 _VALID_PROG = {"worsening", "improving", "stable", "recurring"}
 
 
-def _normalize_cohort_bucket(value: Any) -> str:
-    """Map an LLM-returned cohort bucket to a valid CohortBucket enum value."""
+def _normalize_cohort_bucket(value: Any, simplified: dict) -> str:
+    """Map an LLM-returned cohort bucket to a valid cohort from config, or fallback via match_cohort."""
     if not value or not isinstance(value, str):
-        return "General Follow-up"
+        # Fallback to rules engine if LLM gave nothing useful
+        return _fallback_match(simplified)
     
-    # Direct match
-    if value in _VALID_COHORTS:
-        return value
-    
-    # Case-insensitive match
     lower = value.lower().strip()
-    for valid in _VALID_COHORTS:
-        if valid.lower() == lower:
-            return valid
     
-    # Fuzzy match via keywords
-    for keyword, bucket in _COHORT_FUZZY_MAP.items():
-        if keyword in lower:
-            return bucket
-    
-    logger.warning(f"Unknown cohort bucket '{value}', defaulting to 'General Follow-up'")
-    return "General Follow-up"
+    # 1. Exact match on display name
+    for cohort in COHORT_RULES:
+        if cohort["bucket"].lower() == lower:
+            return cohort["bucket"]
+            
+    # 2. Fuzzy match via keywords in the LLM's string
+    for cohort in COHORT_RULES:
+        if any(kw in lower for kw in cohort["keywords"]):
+            return cohort["bucket"]
+            
+    # 3. Complete fallback using patient data
+    logger.warning(f"Unknown cohort bucket '{value}', falling back to rules engine")
+    return _fallback_match(simplified)
 
+def _fallback_match(simplified: dict) -> str:
+    dept = simplified.get("department", "")
+    conds = simplified.get("known_conditions", [])
+    prim = ""
+    if simplified.get("presenting_complaints"):
+        prim = simplified["presenting_complaints"][0]
+    cond_s = " ".join(c.lower() for c in conds) + " " + prim.lower()
+    return match_cohort(dept, cond_s, prim, len(conds))
 
 def _ensure_source(obj: Any) -> None:
     """In-place: ensure obj['source'] is a valid dict, not null or empty."""
@@ -280,8 +251,8 @@ def normalize_patient_data(data: dict, simplified: dict) -> dict:
     if risk not in {"high", "medium", "low"}:
         data["risk_level"] = "medium"
 
-    # cohort_bucket normalization
-    data["cohort_bucket"] = _normalize_cohort_bucket(data.get("cohort_bucket"))
+    # Cohort bucket
+    data["cohort_bucket"] = _normalize_cohort_bucket(data.get("cohort_bucket"), simplified)
 
     # admission_status
     conv = data.get("conversion_status")

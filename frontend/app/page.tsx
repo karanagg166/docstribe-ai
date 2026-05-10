@@ -31,6 +31,10 @@ export default function DashboardPage() {
     });
   }, [data?.patients, searchQuery, selectedRisk, selectedCohort]);
 
+  const availableCohorts = useMemo(() => {
+    return data?.summary?.cohort_distribution ? Object.keys(data.summary.cohort_distribution).sort() : [];
+  }, [data?.summary?.cohort_distribution]);
+
   return (
     <DashboardShell>
       {isLoading ? (
@@ -84,6 +88,7 @@ export default function DashboardPage() {
               setSelectedRisk={setSelectedRisk}
               selectedCohort={selectedCohort}
               setSelectedCohort={setSelectedCohort}
+              availableCohorts={availableCohorts}
             />
             <PatientWorklist patients={filteredPatients} />
           </div>

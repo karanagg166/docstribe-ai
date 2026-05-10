@@ -16,19 +16,14 @@ class ProgressionStatus(str, Enum):
     STABLE = "stable"
     RECURRING = "recurring"
 
-class CohortBucket(str, Enum):
-    POORLY_CONTROLLED_DIABETIC = "Poorly Controlled Diabetic"
-    HTN_FOLLOWUP = "Hypertension Follow-up"
-    CKD_FOLLOWUP = "CKD Follow-up"
-    RECURRENT_INFECTION = "Recurrent Infection"
-    POST_PROCEDURE = "Post-Procedure Recovery"
-    HIGH_UTILIZATION = "High Utilization OPD"
-    GENERAL_FOLLOWUP = "General Follow-up"
-    CARDIAC_INTERVENTION_PENDING = "Cardiac Intervention Pending"
-    NEUROLOGICAL_DISORDER = "Neurological/Movement Disorder"
-    MUSCULOSKELETAL_SURGICAL = "Musculoskeletal/Surgical"
-    GI_HEPATOBILIARY = "GI/Hepatobiliary"
-    HIGH_RISK_MULTIMORBID = "High-Risk Multi-Morbid"
+# CohortBucket is a plain str — not an enum — so the system can handle
+# any specialty the LLM or rules engine produces without code changes.
+# Common values (for reference):
+#   "Poorly Controlled Diabetic", "Hypertension Follow-up", "CKD Follow-up",
+#   "Recurrent Infection", "Post-Procedure Recovery", "High Utilization OPD",
+#   "General Follow-up", "Cardiac Intervention Pending",
+#   "Neurological/Movement Disorder", "Musculoskeletal/Surgical",
+#   "GI/Hepatobiliary", "High-Risk Multi-Morbid"
 
 # ─── Source Trace ─────────────────────────────────────
 
@@ -109,7 +104,7 @@ class PatientInsight(BaseModel):
     age: int
     gender: str
     primary_condition: str
-    cohort_bucket: CohortBucket
+    cohort_bucket: str              # Dynamic — any clinically appropriate label
     risk_level: RiskLevel
     risk_reasoning: str
     progression_status: ProgressionStatus

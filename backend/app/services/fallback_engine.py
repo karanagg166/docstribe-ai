@@ -9,7 +9,6 @@ from typing import Any, Dict, List
 
 from app.models.schemas import (
     CarePathVariance,
-    CohortBucket,
     ConversionFunnelSummary,
     ConversionStatus,
     DashboardResponse,
@@ -24,6 +23,24 @@ from app.models.schemas import (
     SourceTrace,
     VarianceDetail,
     VisitSummary,
+)
+from app.services.clinical_rules import (
+    VITAL_THRESHOLDS,
+    LAB_THRESHOLDS,
+    TRACKABLE_VITALS,
+    MULTI_MORBID_CONDITION_COUNT,
+    URGENCY_KEYWORDS,
+    BARRIER_KEYWORDS,
+    CONVERSION_DECLINED_KEYWORDS,
+    CONVERSION_FINANCIAL_KEYWORDS,
+    CONVERSION_DEFERRING_KEYWORDS,
+    CONVERSION_POSITIVE_KEYWORDS,
+    WORSENING_KEYWORDS,
+    IMPROVING_KEYWORDS,
+    RECURRING_KEYWORDS,
+    DEFAULT_COHORT,
+    MULTI_MORBID_COHORT,
+    match_cohort,
 )
 
 
@@ -208,26 +225,7 @@ def _determine_cohort(dept: str, conditions: list, primary: str) -> str:
     dept_l = dept.lower()
     cond_s = " ".join(c.lower() for c in conditions)
     prim_l = primary.lower()
-
-    if "cardiol" in dept_l or "angina" in prim_l or "cardiac" in cond_s:
-        return CohortBucket.CARDIAC_INTERVENTION_PENDING
-    if "diabet" in cond_s or "hba1c" in prim_l:
-        return CohortBucket.POORLY_CONTROLLED_DIABETIC
-    if "hypertension" in cond_s or "htn" in cond_s:
-        return CohortBucket.HTN_FOLLOWUP
-    if "ckd" in cond_s or "kidney" in cond_s or "renal" in cond_s:
-        return CohortBucket.CKD_FOLLOWUP
-    if "neuro" in dept_l or "dystonia" in prim_l or "headache" in prim_l or "migrain" in prim_l:
-        return CohortBucket.NEUROLOGICAL_DISORDER
-    if "ortho" in dept_l or "arthro" in prim_l or "knee" in prim_l or "shoulder" in prim_l:
-        return CohortBucket.MUSCULOSKELETAL_SURGICAL
-    if "gastro" in dept_l or "gi" in prim_l or "liver" in cond_s or "hepat" in cond_s:
-        return CohortBucket.GI_HEPATOBILIARY
-    if len(conditions) >= 3:
-        return CohortBucket.HIGH_RISK_MULTIMORBID
-    if "post" in prim_l and "procedure" in prim_l:
-        return CohortBucket.POST_PROCEDURE
-    return CohortBucket.GENERAL_FOLLOWUP
+    return match_cohort(dept_l, cond_s, prim_l, len(conditions))
 
 
 def _determine_risk(visit_history: list, referral: dict, known_conditions: list | None = None) -> RiskLevel:
@@ -242,30 +240,30 @@ def _determine_risk(visit_history: list, referral: dict, known_conditions: list 
         if bp:
             parts = bp.replace("/", " ").split()
             try:
-                if int(parts[0]) > 160:
+                if int(parts[0]) > VITAL_THRESHOLDS["bp_systolic_high"]:
                     return RiskLevel.HIGH
             except (ValueError, IndexError):
                 pass
 
         hr = vitals.get("hr", 0)
-        if isinstance(hr, (int, float)) and hr > 100:
+        if isinstance(hr, (int, float)) and hr > VITAL_THRESHOLDS["hr_high"]:
             return RiskLevel.HIGH
 
         spo2 = vitals.get("spo2")
-        if isinstance(spo2, (int, float)) and spo2 < 94:
+        if isinstance(spo2, (int, float)) and spo2 < VITAL_THRESHOLDS["spo2_low"]:
             return RiskLevel.HIGH
 
         temp = vitals.get("temp_f")
-        if isinstance(temp, (int, float)) and temp > 100.4:
+        if isinstance(temp, (int, float)) and temp > VITAL_THRESHOLDS["temp_f_high"]:
             return RiskLevel.HIGH
 
-    # Comorbidity check: ≥3 conditions is high risk
+    # Comorbidity check
     conditions = known_conditions or []
-    if len(conditions) >= 3:
+    if len(conditions) >= MULTI_MORBID_CONDITION_COUNT:
         return RiskLevel.HIGH
 
     urgency = referral.get("op_advised_reason", "").lower()
-    if any(w in urgency for w in ["urgent", "status migrain", "severe", "emergency", "esrd", "dialysis"]):
+    if any(w in urgency for w in URGENCY_KEYWORDS):
         return RiskLevel.HIGH
 
     return RiskLevel.MEDIUM
@@ -285,32 +283,42 @@ def _determine_progression(visit_history: list) -> ProgressionStatus:
             except (ValueError, IndexError):
                 pass
 
+    bp_cfg = TRACKABLE_VITALS.get("bp", {})
+    bp_delta = bp_cfg.get("delta", 5)
     if len(systolics) >= 2:
-        if systolics[-1] < systolics[0] - 5:
+        if systolics[-1] < systolics[0] - bp_delta:
             return ProgressionStatus.IMPROVING
-        if systolics[-1] > systolics[0] + 5:
+        if systolics[-1] > systolics[0] + bp_delta:
             return ProgressionStatus.WORSENING
 
-    # 2. Numerical lab trend: compare HbA1c across visits
-    hba1c_vals = []
-    for v in visit_history:
-        val = v.get("labs", {}).get("hba1c")
-        if isinstance(val, (int, float)):
-            hba1c_vals.append(float(val))
-
-    if len(hba1c_vals) >= 2:
-        if hba1c_vals[-1] < hba1c_vals[0] - 0.2:
-            return ProgressionStatus.IMPROVING
-        if hba1c_vals[-1] > hba1c_vals[0] + 0.2:
-            return ProgressionStatus.WORSENING
+    # 2. Generic lab trend: check ALL configured labs, first worsening signal wins
+    for lab_key, cfg in LAB_THRESHOLDS.items():
+        vals = []
+        for v in visit_history:
+            val = v.get("labs", {}).get(lab_key)
+            if isinstance(val, (int, float)):
+                vals.append(float(val))
+        if len(vals) >= 2:
+            delta = cfg.get("delta", 0.2)
+            direction = cfg.get("direction", "high_is_bad")
+            if direction == "high_is_bad":
+                if vals[-1] > vals[0] + delta:
+                    return ProgressionStatus.WORSENING
+                if vals[-1] < vals[0] - delta:
+                    return ProgressionStatus.IMPROVING
+            else:  # low_is_bad
+                if vals[-1] < vals[0] - delta:
+                    return ProgressionStatus.WORSENING
+                if vals[-1] > vals[0] + delta:
+                    return ProgressionStatus.IMPROVING
 
     # 3. Keyword fallback on chief complaint
     chief = visit_history[-1].get("chief_complaint", "").lower()
-    if any(w in chief for w in ["worsening", "increasing", "persistent", "severe", "continuous"]):
+    if any(w in chief for w in WORSENING_KEYWORDS):
         return ProgressionStatus.WORSENING
-    if any(w in chief for w in ["improving", "better", "decreased", "resolved"]):
+    if any(w in chief for w in IMPROVING_KEYWORDS):
         return ProgressionStatus.IMPROVING
-    if any(w in chief for w in ["recurrent", "recurring", "again"]):
+    if any(w in chief for w in RECURRING_KEYWORDS):
         return ProgressionStatus.RECURRING
     return ProgressionStatus.STABLE
 
@@ -333,12 +341,12 @@ def _extract_risk_flags(visit_history: list) -> List[RiskFlag]:
             parts = bp.replace("/", " ").split()
             try:
                 systolic = int(parts[0])
-                if systolic > 150:
+                if systolic > VITAL_THRESHOLDS["bp_systolic_elevated"]:
                     seen.add("bp")
                     flags.append(RiskFlag(
                         flag=f"Elevated BP: {bp}",
                         detail=f"Systolic {systolic} mmHg above safe threshold (Visit {visit_num})",
-                        severity=RiskLevel.HIGH if systolic > 160 else RiskLevel.MEDIUM,
+                        severity=RiskLevel.HIGH if systolic > VITAL_THRESHOLDS["bp_systolic_high"] else RiskLevel.MEDIUM,
                         source=SourceTrace(type="vital", description=f"BP: {bp}", visit_number=visit_num),
                     ))
             except (ValueError, IndexError):
@@ -346,7 +354,7 @@ def _extract_risk_flags(visit_history: list) -> List[RiskFlag]:
 
         # SpO2 check
         spo2 = vitals.get("spo2")
-        if isinstance(spo2, (int, float)) and spo2 < 94 and "spo2" not in seen:
+        if isinstance(spo2, (int, float)) and spo2 < VITAL_THRESHOLDS["spo2_low"] and "spo2" not in seen:
             seen.add("spo2")
             flags.append(RiskFlag(
                 flag=f"Low SpO2: {spo2}%",
@@ -357,36 +365,46 @@ def _extract_risk_flags(visit_history: list) -> List[RiskFlag]:
 
         # Temperature check
         temp = vitals.get("temp_f")
-        if isinstance(temp, (int, float)) and temp > 100.4 and "temp" not in seen:
+        if isinstance(temp, (int, float)) and temp > VITAL_THRESHOLDS["temp_f_high"] and "temp" not in seen:
             seen.add("temp")
             flags.append(RiskFlag(
                 flag=f"Fever: {temp}°F",
-                detail=f"Temperature {temp}°F above 100.4°F threshold (Visit {visit_num})",
+                detail=f"Temperature {temp}°F above {VITAL_THRESHOLDS['temp_f_high']}°F threshold (Visit {visit_num})",
                 severity=RiskLevel.HIGH,
                 source=SourceTrace(type="vital", description=f"Temp: {temp}°F", visit_number=visit_num),
             ))
 
-        # HbA1c check
-        hba1c = labs.get("hba1c", 0)
-        if isinstance(hba1c, (int, float)) and hba1c > 7.0 and "hba1c" not in seen:
-            seen.add("hba1c")
-            flags.append(RiskFlag(
-                flag=f"HbA1c elevated: {hba1c}",
-                detail=f"HbA1c {hba1c}% — above target threshold of 7.0% (Visit {visit_num})",
-                severity=RiskLevel.HIGH if hba1c > 8.0 else RiskLevel.MEDIUM,
-                source=SourceTrace(type="lab", description=f"HbA1c: {hba1c}%", visit_number=visit_num),
-            ))
+        # Generic lab checks — auto-flag ANY lab that exceeds its configured threshold
+        for lab_key, cfg in LAB_THRESHOLDS.items():
+            if lab_key in seen:
+                continue
+            val = labs.get(lab_key)
+            if not isinstance(val, (int, float)):
+                continue
+            elevated = cfg.get("elevated")
+            critical = cfg.get("critical")
+            direction = cfg.get("direction", "high_is_bad")
+            display = cfg.get("display_name", lab_key.replace("_", " ").title())
+            unit = cfg.get("unit", "")
 
-        # Creatinine check
-        creatinine = labs.get("creatinine", 0)
-        if isinstance(creatinine, (int, float)) and creatinine > 1.2 and "creatinine" not in seen:
-            seen.add("creatinine")
-            flags.append(RiskFlag(
-                flag=f"Creatinine elevated: {creatinine}",
-                detail=f"Creatinine {creatinine} mg/dL — suggests renal concern (Visit {visit_num})",
-                severity=RiskLevel.MEDIUM,
-                source=SourceTrace(type="lab", description=f"Creatinine: {creatinine}", visit_number=visit_num),
-            ))
+            is_flagged = False
+            if direction == "high_is_bad" and elevated and val > elevated:
+                is_flagged = True
+                severity = RiskLevel.HIGH if (critical and val > critical) else RiskLevel.MEDIUM
+            elif direction == "low_is_bad":
+                low_thresh = cfg.get("low_threshold", elevated)
+                if low_thresh and val < low_thresh:
+                    is_flagged = True
+                    severity = RiskLevel.HIGH if (critical and val < critical) else RiskLevel.MEDIUM
+
+            if is_flagged:
+                seen.add(lab_key)
+                flags.append(RiskFlag(
+                    flag=f"{display} abnormal: {val}{unit}",
+                    detail=f"{display} {val}{unit} — outside safe range (Visit {visit_num})",
+                    severity=severity,
+                    source=SourceTrace(type="lab", description=f"{display}: {val}{unit}", visit_number=visit_num),
+                ))
 
     return flags
 
@@ -397,10 +415,25 @@ def _determine_conversion(call_history: list, referral: dict) -> ConversionStatu
     if not call_history:
         return ConversionStatus(procedure_advised=procedure_advised, admission_status="Pending", source=[])
 
+    no_answer_count = 0
+    for call in call_history:
+        outcome = call.get("outcome", call.get("call_status", "")).lower()
+        if outcome in ["no_answer", "no answer", "not_connected", "switched_off"]:
+            no_answer_count += 1
+            
+    if no_answer_count >= 2:
+        return ConversionStatus(
+            procedure_advised=procedure_advised,
+            admission_status="Pending",
+            barrier="Unreachable",
+            barrier_detail=f"Patient unreachable ({no_answer_count} failed contact attempts)",
+            source=[SourceTrace(type="visit_note", description="Multiple failed contact attempts", visit_number=0)],
+        )
+
     transcript = call_history[-1].get("transcript_summary", "").lower()
     detail = call_history[-1].get("transcript_summary", "")
 
-    if any(w in transcript for w in ["declined", "not interested", "refuses", "declined admission"]):
+    if any(w in transcript for w in CONVERSION_DECLINED_KEYWORDS):
         return ConversionStatus(
             procedure_advised=procedure_advised,
             admission_status="Declined",
@@ -408,7 +441,7 @@ def _determine_conversion(call_history: list, referral: dict) -> ConversionStatu
             barrier_detail=detail,
             source=[SourceTrace(type="visit_note", description=detail[:100], visit_number=0)],
         )
-    if any(w in transcript for w in ["insurance", "cost", "funds", "afford"]):
+    if any(w in transcript for w in CONVERSION_FINANCIAL_KEYWORDS):
         return ConversionStatus(
             procedure_advised=procedure_advised,
             admission_status="Pending",
@@ -416,7 +449,7 @@ def _determine_conversion(call_history: list, referral: dict) -> ConversionStatu
             barrier_detail=detail,
             source=[SourceTrace(type="visit_note", description="Financial concern noted", visit_number=0)],
         )
-    if any(w in transcript for w in ["delay", "wait", "later", "managing", "physiotherapy"]):
+    if any(w in transcript for w in CONVERSION_DEFERRING_KEYWORDS):
         return ConversionStatus(
             procedure_advised=procedure_advised,
             admission_status="Pending",
@@ -424,7 +457,7 @@ def _determine_conversion(call_history: list, referral: dict) -> ConversionStatu
             barrier_detail=detail,
             source=[SourceTrace(type="visit_note", description="Patient wants to wait", visit_number=0)],
         )
-    if any(w in transcript for w in ["interested", "agree", "ready", "proceed"]):
+    if any(w in transcript for w in CONVERSION_POSITIVE_KEYWORDS):
         return ConversionStatus(procedure_advised=procedure_advised, admission_status="In Progress", source=[])
 
     return ConversionStatus(procedure_advised=procedure_advised, admission_status="Pending", source=[])
@@ -465,17 +498,7 @@ def _build_variances(advised: list, call_history: list) -> List[VarianceDetail]:
             source=[SourceTrace(type="visit_note", description="Call log", visit_number=0)],
         ))
 
-    barrier_keywords = {
-        "declined": "Patient declined treatment",
-        "not interested": "Patient not interested",
-        "refuses": "Patient refuses",
-        "insurance": "Insurance barrier",
-        "cost": "Financial barrier",
-        "hometown": "Patient prefers hometown facility",
-        "delay": "Patient deferring treatment",
-        "managing": "Patient self-managing",
-        "physiotherapy": "Patient choosing conservative management",
-    }
+    barrier_keywords = BARRIER_KEYWORDS
     for c in call_history:
         transcript = c.get("transcript_summary", "").lower()
         for kw, label in barrier_keywords.items():
@@ -504,18 +527,24 @@ def _get_risk_reasoning(risk: RiskLevel, visit_history: list, referral: dict) ->
         if bp:
             try:
                 systolic = int(bp.replace("/", " ").split()[0])
-                if systolic > 150:
+                if systolic > VITAL_THRESHOLDS["bp_systolic_elevated"]:
                     reasons.append(f"BP {bp} in Visit {vn} exceeds threshold")
             except (ValueError, IndexError):
                 pass
 
         spo2 = vitals.get("spo2")
-        if isinstance(spo2, (int, float)) and spo2 < 94:
+        if isinstance(spo2, (int, float)) and spo2 < VITAL_THRESHOLDS["spo2_low"]:
             reasons.append(f"SpO2 {spo2}% in Visit {vn} indicates hypoxemia")
 
-        hba1c = labs.get("hba1c")
-        if isinstance(hba1c, (int, float)) and hba1c > 7.0:
-            reasons.append(f"HbA1c {hba1c}% in Visit {vn} above 7.0 target")
+        # Generic lab reasoning
+        for lab_key, cfg in LAB_THRESHOLDS.items():
+            val = labs.get(lab_key)
+            if not isinstance(val, (int, float)):
+                continue
+            elevated = cfg.get("elevated")
+            display = cfg.get("display_name", lab_key)
+            if elevated and val > elevated:
+                reasons.append(f"{display} {val} in Visit {vn} above {elevated} target")
 
     if not reasons:
         dept = referral.get("department", "specialist")
@@ -530,24 +559,10 @@ def _get_risk_reasoning(risk: RiskLevel, visit_history: list, referral: dict) ->
 
 
 def _extract_progression_metrics(visit_history: list) -> List[ProgressionPoint]:
-    """Build ProgressionPoint objects from longitudinal lab/vital data."""
+    """Build ProgressionPoint objects from longitudinal lab/vital data — fully generic."""
     metrics: List[ProgressionPoint] = []
 
-    # HbA1c trend
-    hba1c_points = []
-    for v_idx, v in enumerate(visit_history):
-        val = v.get("labs", {}).get("hba1c")
-        if isinstance(val, (int, float)):
-            hba1c_points.append({"date": v.get("visit_date", f"Visit {v_idx+1}"), "value": str(val)})
-    if len(hba1c_points) >= 2:
-        first, last = float(hba1c_points[0]["value"]), float(hba1c_points[-1]["value"])
-        trend = ProgressionStatus.IMPROVING if last < first - 0.2 else (ProgressionStatus.WORSENING if last > first + 0.2 else ProgressionStatus.STABLE)
-        metrics.append(ProgressionPoint(
-            metric="HbA1c", values=hba1c_points, trend=trend,
-            source=SourceTrace(type="lab", description="HbA1c trend across visits", visit_number=len(visit_history)),
-        ))
-
-    # Systolic BP trend
+    # 1. Systolic BP trend (vital — special extraction from string)
     bp_points = []
     for v_idx, v in enumerate(visit_history):
         bp = v.get("vitals", {}).get("bp", "")
@@ -558,26 +573,35 @@ def _extract_progression_metrics(visit_history: list) -> List[ProgressionPoint]:
             except (ValueError, IndexError):
                 pass
     if len(bp_points) >= 2:
+        bp_cfg = TRACKABLE_VITALS.get("bp", {})
+        bp_delta = bp_cfg.get("delta", 5)
         first, last = int(bp_points[0]["value"]), int(bp_points[-1]["value"])
-        trend = ProgressionStatus.IMPROVING if last < first - 5 else (ProgressionStatus.WORSENING if last > first + 5 else ProgressionStatus.STABLE)
+        trend = ProgressionStatus.IMPROVING if last < first - bp_delta else (ProgressionStatus.WORSENING if last > first + bp_delta else ProgressionStatus.STABLE)
         metrics.append(ProgressionPoint(
             metric="Systolic BP", values=bp_points, trend=trend,
             source=SourceTrace(type="vital", description="BP trend across visits", visit_number=len(visit_history)),
         ))
 
-    # Creatinine trend
-    creat_points = []
-    for v_idx, v in enumerate(visit_history):
-        val = v.get("labs", {}).get("creatinine")
-        if isinstance(val, (int, float)):
-            creat_points.append({"date": v.get("visit_date", f"Visit {v_idx+1}"), "value": str(val)})
-    if len(creat_points) >= 2:
-        first, last = float(creat_points[0]["value"]), float(creat_points[-1]["value"])
-        trend = ProgressionStatus.IMPROVING if last < first - 0.1 else (ProgressionStatus.WORSENING if last > first + 0.1 else ProgressionStatus.STABLE)
-        metrics.append(ProgressionPoint(
-            metric="Creatinine", values=creat_points, trend=trend,
-            source=SourceTrace(type="lab", description="Creatinine trend across visits", visit_number=len(visit_history)),
-        ))
+    # 2. Generic lab trends — auto-discover ALL labs present in LAB_THRESHOLDS
+    for lab_key, cfg in LAB_THRESHOLDS.items():
+        points = []
+        for v_idx, v in enumerate(visit_history):
+            val = v.get("labs", {}).get(lab_key)
+            if isinstance(val, (int, float)):
+                points.append({"date": v.get("visit_date", f"Visit {v_idx+1}"), "value": str(val)})
+        if len(points) >= 2:
+            delta = cfg.get("delta", 0.2)
+            direction = cfg.get("direction", "high_is_bad")
+            display = cfg.get("display_name", lab_key.replace("_", " ").title())
+            first, last = float(points[0]["value"]), float(points[-1]["value"])
+            if direction == "high_is_bad":
+                trend = ProgressionStatus.IMPROVING if last < first - delta else (ProgressionStatus.WORSENING if last > first + delta else ProgressionStatus.STABLE)
+            else:
+                trend = ProgressionStatus.WORSENING if last < first - delta else (ProgressionStatus.IMPROVING if last > first + delta else ProgressionStatus.STABLE)
+            metrics.append(ProgressionPoint(
+                metric=display, values=points, trend=trend,
+                source=SourceTrace(type="lab", description=f"{display} trend across visits", visit_number=len(visit_history)),
+            ))
 
     return metrics
 

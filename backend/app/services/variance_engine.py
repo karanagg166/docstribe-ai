@@ -1,4 +1,11 @@
 from app.models.schemas import CarePathVariance, VarianceDetail, SourceTrace
+from app.services.clinical_rules import (
+    CONVERSION_DECLINED_KEYWORDS,
+    CONVERSION_FINANCIAL_KEYWORDS,
+    CONVERSION_DEFERRING_KEYWORDS,
+    LAB_THRESHOLDS,
+    match_cohort
+)
 from typing import List
 from datetime import datetime, date
 import logging
@@ -16,9 +23,17 @@ def detect_variances(patient: dict) -> CarePathVariance:
     4. Call log: financial/insurance barrier
     5. Call log: patient deferring/avoiding
     6. Call log: patient unreachable (2+ no_answer)
+    7. Lab trend crossing threshold delta
+    8. Follow-up gap > 6 months for chronic cohorts
+    9. Missing baseline labs for chronic cohorts
+    10. Medication escalation (multiple new meds with no follow-up)
     """
     variances: List[VarianceDetail] = []
     today = date.today()
+    visit_history = patient.get("visit_summary", [])
+    if not visit_history:
+        # Fallback to older format if needed
+        visit_history = patient.get("visit_history", patient.get("visits", []))
     
     # --- 1 & 2: Check advised_actions ---
     advised_actions = patient.get("advised_actions", [])
@@ -26,7 +41,7 @@ def detect_variances(patient: dict) -> CarePathVariance:
     overdue_actions = []
     
     for action in pending_actions:
-        due_date_str = action.get("due_date", "")
+        due_date_str = action.get("due", action.get("due_date", ""))
         if due_date_str:
             try:
                 due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
@@ -39,13 +54,13 @@ def detect_variances(patient: dict) -> CarePathVariance:
     if overdue_actions:
         for action in overdue_actions:
             variances.append(VarianceDetail(
-                description=f"Overdue: {action.get('title', 'Action')} was due {action.get('due_date', 'unknown')}",
-                expected_action=f"Complete {action.get('action_type', 'action')}: {action.get('title', '')}",
-                actual_finding=f"Status is still 'pending' past due date ({action.get('due_date', '')})",
+                description=f"Overdue: {action.get('title', 'Action')} was due {action.get('due', action.get('due_date', 'unknown'))}",
+                expected_action=f"Complete {action.get('type', action.get('action_type', 'action'))}: {action.get('title', '')}",
+                actual_finding=f"Status is still 'pending' past due date",
                 source=[SourceTrace(
                     type="visit_note",
                     description=f"Advised action: {action.get('title', '')}",
-                    visit_number=len(patient.get("visit_history", []))
+                    visit_number=len(visit_history)
                 )]
             ))
     
@@ -58,23 +73,18 @@ def detect_variances(patient: dict) -> CarePathVariance:
             source=[SourceTrace(
                 type="visit_note",
                 description="Multiple pending advised actions",
-                visit_number=len(patient.get("visit_history", []))
+                visit_number=len(visit_history)
             )]
         ))
     
     # --- 3-6: Check call_history ---
     call_history = patient.get("call_history", [])
-    
-    decline_keywords = ["declined", "not interested", "refuses", "refused", "not proceeding", "firm"]
-    financial_keywords = ["cost", "insurance", "funds", "afford", "money", "payment", "tpa", "lacks funds"]
-    deferral_keywords = ["delay", "wait", "later", "managing", "physiotherapy", "hometown", "consider", "wants to discuss"]
-    
     no_answer_count = 0
     
     for call in call_history:
         outcome = str(call.get("outcome", "")).lower()
-        summary = str(call.get("transcript_summary", "")).lower()
-        call_date = call.get("call_date", "")
+        summary = str(call.get("summary", call.get("transcript_summary", ""))).lower()
+        call_date = call.get("date", call.get("call_date", ""))
         
         # Track no-answers
         if outcome in ["no_answer", "no answer", "not_connected", "switched_off"]:
@@ -82,41 +92,41 @@ def detect_variances(patient: dict) -> CarePathVariance:
             continue
         
         # Decline detection
-        if any(kw in summary for kw in decline_keywords):
+        if any(kw in summary for kw in CONVERSION_DECLINED_KEYWORDS):
             variances.append(VarianceDetail(
                 description="Patient declined treatment/admission",
                 expected_action="Patient acceptance of advised procedure/admission",
                 actual_finding=f"Call on {call_date}: Patient expressed refusal or disinterest",
                 source=[SourceTrace(
                     type="visit_note",
-                    description=f"Call log: {call.get('transcript_summary', '')[:100]}",
-                    visit_number=len(patient.get("visit_history", []))
+                    description=f"Call log: {summary[:100]}",
+                    visit_number=len(visit_history)
                 )]
             ))
         
         # Financial barrier detection
-        if any(kw in summary for kw in financial_keywords):
+        if any(kw in summary for kw in CONVERSION_FINANCIAL_KEYWORDS):
             variances.append(VarianceDetail(
                 description="Financial/insurance barrier identified",
                 expected_action="Clear financial pathway for admission (insurance approval, payment plan)",
                 actual_finding=f"Call on {call_date}: Financial or insurance concern raised",
                 source=[SourceTrace(
                     type="visit_note",
-                    description=f"Call log: {call.get('transcript_summary', '')[:100]}",
-                    visit_number=len(patient.get("visit_history", []))
+                    description=f"Call log: {summary[:100]}",
+                    visit_number=len(visit_history)
                 )]
             ))
         
         # Deferral detection
-        if any(kw in summary for kw in deferral_keywords):
+        if any(kw in summary for kw in CONVERSION_DEFERRING_KEYWORDS):
             variances.append(VarianceDetail(
                 description="Patient deferring/avoiding treatment",
                 expected_action="Timely scheduling of advised procedure",
                 actual_finding=f"Call on {call_date}: Patient indicated deferral or avoidance",
                 source=[SourceTrace(
                     type="visit_note",
-                    description=f"Call log: {call.get('transcript_summary', '')[:100]}",
-                    visit_number=len(patient.get("visit_history", []))
+                    description=f"Call log: {summary[:100]}",
+                    visit_number=len(visit_history)
                 )]
             ))
     
@@ -129,20 +139,106 @@ def detect_variances(patient: dict) -> CarePathVariance:
             source=[SourceTrace(
                 type="visit_note",
                 description="Multiple failed contact attempts",
-                visit_number=len(patient.get("visit_history", []))
+                visit_number=len(visit_history)
             )]
         ))
 
-    # --- Legacy checks for backward compatibility ---
-    visits = patient.get("visits", [])
-    if len(visits) >= 3:
-        med_count = sum(1 for v in visits if len(v.get("medications_prescribed", [])) > 2)
-        if med_count >= 3:
+    # Determine cohort if needed for chronic disease logic
+    cohort = patient.get("cohort")
+    if not cohort:
+        # Best effort to guess cohort based on simplified data
+        department = (patient.get("department") or "").lower()
+        conditions = " ".join(patient.get("known_conditions", [])).lower()
+        primary = " ".join(patient.get("presenting_complaints", [])).lower()
+        cohort = match_cohort(department, conditions, primary, len(patient.get("known_conditions", [])))
+
+    chronic_cohorts = ["Poorly Controlled Diabetic", "Hypertension Follow-up", "CKD Follow-up"]
+
+    # --- 7. Lab Trend Variance ---
+    # Extract points for each lab
+    for lab_key, cfg in LAB_THRESHOLDS.items():
+        points = []
+        for v_idx, v in enumerate(visit_history):
+            labs = v.get("labs") or {}
+            val = labs.get(lab_key)
+            if isinstance(val, (int, float)):
+                points.append(float(val))
+        
+        if len(points) >= 2:
+            delta = cfg.get("delta", 0.2)
+            direction = cfg.get("direction", "high_is_bad")
+            display = cfg.get("display_name", lab_key.replace("_", " ").title())
+            first, last = points[0], points[-1]
+            
+            worsening = False
+            if direction == "high_is_bad" and last > first + delta:
+                worsening = True
+            elif direction == "low_is_bad" and last < first - delta:
+                worsening = True
+                
+            if worsening:
+                variances.append(VarianceDetail(
+                    description=f"{display} is trending worse across visits",
+                    expected_action=f"Stabilization or improvement of {display}",
+                    actual_finding=f"{display} changed from {first} to {last} (Delta > {delta})",
+                    source=[SourceTrace(
+                        type="lab",
+                        description=f"{display} trend worsening",
+                        visit_number=len(visit_history)
+                    )]
+                ))
+
+    # --- 8. Follow-up gap > 6 months for chronic cohorts ---
+    if cohort in chronic_cohorts and len(visit_history) > 0:
+        last_visit_str = visit_history[-1].get("date", visit_history[-1].get("visit_date", ""))
+        if last_visit_str:
+            try:
+                last_visit = datetime.strptime(last_visit_str, "%Y-%m-%d").date()
+                days_since_visit = (today - last_visit).days
+                if days_since_visit > 180:
+                    variances.append(VarianceDetail(
+                        description="Gap in chronic care follow-up",
+                        expected_action="Routine follow-up within 6 months for chronic conditions",
+                        actual_finding=f"No visit in the last {days_since_visit} days",
+                        source=[SourceTrace(
+                            type="visit_note",
+                            description="Timeline analysis",
+                            visit_number=len(visit_history)
+                        )]
+                    ))
+            except (ValueError, TypeError):
+                pass
+
+    # --- 9. Missing Baseline Labs ---
+    if cohort == "Poorly Controlled Diabetic" and len(visit_history) > 0:
+        has_hba1c = any((v.get("labs") or {}).get("hba1c") is not None for v in visit_history)
+        if not has_hba1c:
             variances.append(VarianceDetail(
-                description="Medication escalated 3+ times without stabilization",
-                expected_action="Stabilization of condition with current meds",
-                actual_finding="Multiple medication changes across recent visits",
-                source=[SourceTrace(type="prescription", description="Medication history", visit_number=len(visits))]
+                description="Missing baseline HbA1c for diabetic patient",
+                expected_action="HbA1c lab order and results on file",
+                actual_finding="No HbA1c results found in visit history",
+                source=[SourceTrace(
+                    type="lab",
+                    description="Missing essential lab",
+                    visit_number=len(visit_history)
+                )]
+            ))
+
+    # --- 10. Medication Escalation ---
+    if len(visit_history) >= 2:
+        last_visit = visit_history[-1]
+        prescriptions = last_visit.get("prescription", last_visit.get("medications_prescribed", []))
+        if len(prescriptions) >= 3 and not advised_actions:
+            # If multiple medications prescribed but NO advised actions/follow-ups pending
+            variances.append(VarianceDetail(
+                description="Medication escalated without clear follow-up plan",
+                expected_action="Scheduled follow-up or lab check after prescribing 3+ medications",
+                actual_finding=f"{len(prescriptions)} medications prescribed but 0 pending actions",
+                source=[SourceTrace(
+                    type="prescription",
+                    description="Medication history vs advised actions",
+                    visit_number=len(visit_history)
+                )]
             ))
 
     detected = len(variances) > 0
@@ -150,3 +246,4 @@ def detect_variances(patient: dict) -> CarePathVariance:
         detected=detected,
         variances=variances
     )
+

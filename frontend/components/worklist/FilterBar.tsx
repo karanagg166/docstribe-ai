@@ -8,12 +8,14 @@ interface FilterBarProps {
   setSelectedRisk: (val: string) => void;
   selectedCohort: string;
   setSelectedCohort: (val: string) => void;
+  availableCohorts?: string[];
 }
 
 export default function FilterBar({
   searchQuery, setSearchQuery,
   selectedRisk, setSelectedRisk,
-  selectedCohort, setSelectedCohort
+  selectedCohort, setSelectedCohort,
+  availableCohorts = []
 }: FilterBarProps) {
   
   const hasFilters = searchQuery !== "" || selectedRisk !== "all" || selectedCohort !== "all";
@@ -65,13 +67,9 @@ export default function FilterBar({
             className="rounded-md border-0 py-1.5 pl-3 pr-8 text-sm text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-primary bg-slate-50 cursor-pointer max-w-[200px] truncate"
           >
             <option value="all">All Cohorts</option>
-            <option value="Poorly Controlled Diabetic">Poorly Controlled Diabetic</option>
-            <option value="Hypertension Follow-up">Hypertension Follow-up</option>
-            <option value="CKD Follow-up">CKD Follow-up</option>
-            <option value="Post-Procedure Recovery">Post-Procedure Recovery</option>
-            <option value="High-Risk Multi-Morbid">High-Risk Multi-Morbid</option>
-            <option value="Cardiac Intervention Pending">Cardiac Intervention Pending</option>
-            <option value="Neurological/Movement Disorder">Neurological/Movement Disorder</option>
+            {availableCohorts.map(cohort => (
+              <option key={cohort} value={cohort}>{cohort}</option>
+            ))}
           </select>
 
           {hasFilters && (

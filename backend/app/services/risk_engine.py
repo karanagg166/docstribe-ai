@@ -1,4 +1,10 @@
 from typing import Dict, Any, List
+from app.services.clinical_rules import (
+    VITAL_THRESHOLDS,
+    URGENCY_KEYWORDS,
+    MULTI_MORBID_CONDITION_COUNT,
+    LAB_THRESHOLDS
+)
 
 def calculate_deterministic_risk(patient: Dict[str, Any]) -> str:
     """
@@ -7,8 +13,9 @@ def calculate_deterministic_risk(patient: Dict[str, Any]) -> str:
     Checks (in order of severity):
     1. Urgency keywords
     2. Vital sign thresholds
-    3. Multi-morbidity with any abnormal vital
-    4. Elective procedure
+    3. Critical lab thresholds
+    4. Multi-morbidity with any abnormal vital/lab
+    5. Elective procedure
     """
     
     # 1. Urgency Check
@@ -21,20 +28,29 @@ def calculate_deterministic_risk(patient: Dict[str, Any]) -> str:
         return "High"
     
     # Check urgency reason for critical keywords
-    critical_keywords = ["esrd", "dialysis", "status migrainosus", "emergency", "urgent", "critical"]
-    if any(kw in urgency_reason for kw in critical_keywords):
+    if any(kw in urgency_reason for kw in URGENCY_KEYWORDS):
         return "High"
         
     # 2. Vitals Check — handle both string and int formats from patients.json
     visit_history = patient.get("visit_history", [])
-    latest_vitals = {}
-    if visit_history:
-        latest_vitals = visit_history[-1].get("vitals", {})
+    latest_visit = visit_history[-1] if visit_history else {}
+    latest_vitals = latest_visit.get("vitals", {})
+    latest_labs = latest_visit.get("labs", {})
     
     # Also check legacy format
     clinical = patient.get("clinical_data", {})
-    legacy_vitals = clinical.get("latest_visit", {}).get("vitals", {})
+    legacy_visit = clinical.get("latest_visit", {})
+    legacy_vitals = legacy_visit.get("vitals", {})
     vitals = latest_vitals or legacy_vitals
+    
+    hr_raw = None
+    hr = 0
+    bp_raw = None
+    bp_sys = 120
+    spo2_raw = None
+    spo2 = 99
+    temp_raw = None
+    temp = 98.6
     
     try:
         # Heart rate — may be int or string like "88 bpm"
@@ -53,27 +69,75 @@ def calculate_deterministic_risk(patient: Dict[str, Any]) -> str:
         temp_raw = vitals.get("temp_f") or vitals.get("temperature", 98.6)
         temp = float(str(temp_raw).replace("°F", "").strip()) if temp_raw else 98.6
         
-        if hr > 110 or hr < 50 or bp_sys > 180 or bp_sys < 90 or spo2 < 94 or temp > 100.4:
+        if (hr > VITAL_THRESHOLDS["hr_high"] or hr < 50 or 
+            bp_sys > VITAL_THRESHOLDS["bp_systolic_high"] or bp_sys < 90 or 
+            spo2 < VITAL_THRESHOLDS["spo2_low"] or 
+            temp > VITAL_THRESHOLDS["temp_f_high"]):
             return "High"
     except Exception:
         pass  # If we can't parse, continue to next check
-    
-    # 3. Multi-morbidity check
+        
+    # 3. Labs Check - Check if any lab crosses critical threshold
+    labs = latest_labs or legacy_visit.get("labs", {})
+    try:
+        for lab_key, val in labs.items():
+            if val is None:
+                continue
+            lab_cfg = LAB_THRESHOLDS.get(lab_key)
+            if not lab_cfg:
+                continue
+                
+            critical_thresh = lab_cfg.get("critical")
+            if critical_thresh is None:
+                continue
+                
+            direction = lab_cfg.get("direction", "high_is_bad")
+            val_float = float(val)
+            
+            if direction == "high_is_bad" and val_float >= critical_thresh:
+                return "High"
+            elif direction == "low_is_bad" and val_float <= critical_thresh:
+                return "High"
+    except Exception:
+        pass
+
+    # 4. Multi-morbidity check
     history = patient.get("history", {})
     known_conditions = history.get("known_conditions", [])
     presenting = history.get("presenting_complaints", [])
     condition_count = len(known_conditions) + len(presenting)
     
-    # If 3+ conditions and any abnormal vital, it's High
-    if condition_count >= 3:
+    # If >= MULTI_MORBID_CONDITION_COUNT conditions and any abnormal vital/lab, it's High
+    if condition_count >= MULTI_MORBID_CONDITION_COUNT:
         try:
+            # For multi-morbidity, we use slightly lower thresholds (elevated rather than high)
             if (hr_raw and (hr > 100 or hr < 55)) or \
-               (bp_raw and (bp_sys > 160 or bp_sys < 95)) or \
+               (bp_raw and (bp_sys > VITAL_THRESHOLDS["bp_systolic_elevated"] or bp_sys < 95)) or \
                (spo2_raw and spo2 < 95):
                 return "High"
+                
+            # Also check elevated labs for multi-morbid patients
+            for lab_key, val in labs.items():
+                if val is None:
+                    continue
+                lab_cfg = LAB_THRESHOLDS.get(lab_key)
+                if not lab_cfg:
+                    continue
+                    
+                elevated_thresh = lab_cfg.get("elevated")
+                if elevated_thresh is None:
+                    continue
+                    
+                direction = lab_cfg.get("direction", "high_is_bad")
+                val_float = float(val)
+                
+                if direction == "high_is_bad" and val_float >= elevated_thresh:
+                    return "High"
+                elif direction == "low_is_bad" and val_float <= elevated_thresh:
+                    return "High"
         except Exception:
             pass
-        # Even without abnormal vitals, 3+ conditions is at least Medium
+        # Even without abnormal vitals/labs, MULTI_MORBID_CONDITION_COUNT+ conditions is at least Medium
         return "Medium"
         
     if urgency == "elective":
@@ -94,3 +158,4 @@ def validate_llm_risk(llm_risk: str, deterministic_risk: str) -> str:
         # Override the LLM
         return "High"
     return llm_risk
+
