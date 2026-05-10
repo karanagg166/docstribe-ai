@@ -132,5 +132,22 @@ DAYS SINCE LAST VISIT: Calculate from the most recent visit_date in visit_histor
 8. All integer fields (age, priority, visit_number, days_since_last_visit, pending counts) must be integers, not strings.
 9. progression_metrics[].values must always be a LIST of {"date": "...", "value": "..."} objects.
 
+--- NULL PREVENTION RULES ---
+
+10. visit_timeline[].medications_prescribed MUST be a list (empty [] if none), NEVER null.
+11. visit_timeline[].labs_ordered MUST be a list (empty [] if none), NEVER null.
+12. visit_timeline[].vitals MUST be an object (empty {} if no vitals recorded), NEVER null.
+13. visit_timeline[].chief_complaint MUST be a non-empty string. Use "Not recorded" if unavailable.
+14. risk_flags MUST be a list (empty [] if no flags), NEVER null or a string.
+15. next_actions MUST be a list (empty [] if no actions), NEVER null or a string.
+16. care_path_variance.variances MUST be a list (empty [] if none), NEVER null.
+
+--- CLINICAL SUMMARY GROUNDING ---
+
+17. clinical_summary MUST reference specific data from the patient's visit history. Cite actual BP readings, lab values, diagnoses, and medication changes from the input data.
+18. NEVER fabricate clinical data. If a lab or vital is not present in the input, do NOT invent a value. State "not available" or omit that detail.
+19. risk_reasoning MUST cite the specific abnormal values that drove the risk classification (e.g., "SpO2 91% in Visit 2" not "low oxygen levels").
+20. When computing progression_status, you MUST compare values across at least 2 visits chronologically. Do NOT guess trends from a single visit.
+
 Do NOT include markdown, code fences, or any text outside the JSON object.
 """

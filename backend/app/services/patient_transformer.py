@@ -78,12 +78,14 @@ def simplify_patients(patients: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
         visit_summary = []
         for v in visit_history:
-            vitals = v.get("vitals", {})
-            labs = v.get("labs", {})
+            vitals = v.get("vitals") or {}
+            labs = v.get("labs") or {}
+            prescription = v.get("prescription") or []
+            imaging = v.get("imaging")
             # Include all available labs, not just a subset
             visit_summary.append({
                 "date": v.get("visit_date"),
-                "complaint": v.get("chief_complaint"),
+                "complaint": v.get("chief_complaint") or "Not recorded",
                 "examination": v.get("examination"),
                 "bp": vitals.get("bp"),
                 "hr": vitals.get("hr"),
@@ -91,9 +93,9 @@ def simplify_patients(patients: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "temp_f": vitals.get("temp_f"),
                 "weight_kg": vitals.get("weight_kg"),
                 "labs": labs if labs else None,
-                "imaging": v.get("imaging"),
-                "diagnosis": v.get("diagnosis_text") or v.get("diagnosis"),
-                "prescription": v.get("prescription", []),
+                "imaging": imaging,
+                "diagnosis": v.get("diagnosis_text") or v.get("diagnosis") or "Pending",
+                "prescription": prescription,
                 "advice": v.get("advice"),
             })
 

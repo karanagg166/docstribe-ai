@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePatientDetail } from "@/hooks/usePatientDetail";
-import { X, Calendar, Activity, Info, PhoneForwarded } from "lucide-react";
+import { X, Calendar, Activity, Info, PhoneForwarded, TrendingUp } from "lucide-react";
 import { getRiskBgClass, getCohortColorClass } from "@/lib/utils";
 import SourceTraceBadge from "./SourceTraceBadge";
 
@@ -66,6 +66,7 @@ export default function PatientDetailPanel() {
                 { id: "timeline", label: "Visit Timeline" },
                 { id: "risks", label: "Risk Flags" },
                 { id: "actions", label: "Next Actions" },
+                { id: "progression", label: "Progression" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -139,10 +140,10 @@ export default function PatientDetailPanel() {
 
               {activeTab === "risks" && (
                 <div className="space-y-4">
-                  {selectedPatient.risk_flags.length === 0 ? (
+                  {(selectedPatient.risk_flags ?? []).length === 0 ? (
                     <div className="text-sm text-slate-500 italic">No significant risk flags detected.</div>
                   ) : (
-                    selectedPatient.risk_flags.map((flag, idx) => (
+                    (selectedPatient.risk_flags ?? []).map((flag, idx) => (
                       <div key={idx} className={`rounded-lg border p-4 ${
                         flag.severity === 'high' ? 'bg-rose-50 border-rose-100' : 
                         flag.severity === 'medium' ? 'bg-amber-50 border-amber-100' :
@@ -171,7 +172,7 @@ export default function PatientDetailPanel() {
                               <span className="font-semibold">Actual:</span> {variance.actual_finding}
                             </div>
                             <div className="mt-3 flex gap-2">
-                              {variance.source.map((src, i) => (
+                              {(variance.source ?? []).map((src, i) => (
                                 <SourceTraceBadge key={i} trace={src} />
                               ))}
                             </div>
@@ -185,7 +186,7 @@ export default function PatientDetailPanel() {
 
               {activeTab === "actions" && (
                 <div className="space-y-4">
-                  {selectedPatient.next_actions.map((action, idx) => (
+                  {(selectedPatient.next_actions ?? []).map((action, idx) => (
                     <div key={idx} className="flex gap-4 rounded-lg border border-slate-200 p-4">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
                         {action.priority}
@@ -194,7 +195,7 @@ export default function PatientDetailPanel() {
                         <div className="flex justify-between items-start">
                           <h4 className="font-medium text-slate-900">{action.action}</h4>
                           <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded capitalize">
-                            {action.action_type.replace('_', ' ')}
+                            {(action.action_type ?? 'clinical').replace('_', ' ')}
                           </span>
                         </div>
                         <p className="mt-1 text-sm text-slate-600">{action.reason}</p>
@@ -209,7 +210,7 @@ export default function PatientDetailPanel() {
 
               {activeTab === "timeline" && (
                 <div className="relative pl-4 before:absolute before:inset-y-0 before:left-[15px] before:w-0.5 before:bg-slate-200">
-                  {selectedPatient.visit_timeline.map((visit, idx) => (
+                  {(selectedPatient.visit_timeline ?? []).map((visit, idx) => (
                     <div key={idx} className="relative mb-8 pl-6 last:mb-0">
                       <div className="absolute left-[-5px] top-1 h-3 w-3 rounded-full bg-primary ring-4 ring-white" />
                       <div className="mb-1 flex items-center gap-2">
@@ -228,19 +229,19 @@ export default function PatientDetailPanel() {
                           </div>
                         )}
                         <div className="flex gap-6 mt-4">
-                          {visit.labs_ordered.length > 0 && (
+                          {(visit.labs_ordered ?? []).length > 0 && (
                             <div>
                               <span className="text-xs font-semibold text-slate-500 uppercase block mb-1">Labs Ordered</span>
                               <ul className="list-disc pl-4 text-xs text-slate-700">
-                                {visit.labs_ordered.map((lab, i) => <li key={i}>{lab}</li>)}
+                                {(visit.labs_ordered ?? []).map((lab, i) => <li key={i}>{lab}</li>)}
                               </ul>
                             </div>
                           )}
-                          {visit.medications_prescribed.length > 0 && (
+                          {(visit.medications_prescribed ?? []).length > 0 && (
                             <div>
                               <span className="text-xs font-semibold text-slate-500 uppercase block mb-1">Medications</span>
                               <ul className="list-disc pl-4 text-xs text-slate-700">
-                                {visit.medications_prescribed.map((med, i) => <li key={i}>{med}</li>)}
+                                {(visit.medications_prescribed ?? []).map((med, i) => <li key={i}>{med}</li>)}
                               </ul>
                             </div>
                           )}
@@ -248,6 +249,56 @@ export default function PatientDetailPanel() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {activeTab === "progression" && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp size={18} className="text-primary" />
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Longitudinal Metrics</h3>
+                  </div>
+                  {(selectedPatient.progression_metrics ?? []).length === 0 ? (
+                    <div className="text-sm text-slate-500 italic">No progression data available for this patient.</div>
+                  ) : (
+                    (selectedPatient.progression_metrics ?? []).map((metric, idx) => (
+                      <div key={idx} className="rounded-lg border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-slate-900">{metric.metric}</h4>
+                          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium capitalize ${
+                            metric.trend === 'improving' ? 'bg-emerald-50 text-emerald-700' :
+                            metric.trend === 'worsening' ? 'bg-rose-50 text-rose-700' :
+                            metric.trend === 'recurring' ? 'bg-violet-50 text-violet-700' :
+                            'bg-slate-50 text-slate-600'
+                          }`}>{metric.trend}</span>
+                        </div>
+                        <div className="flex items-end gap-3">
+                          {(metric.values ?? []).map((v, i) => (
+                            <div key={i} className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-slate-900">{v.value}</span>
+                              <span className="text-[10px] text-slate-500 mt-1 whitespace-nowrap">{v.date}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {metric.source && (
+                          <div className="mt-3">
+                            <SourceTraceBadge trace={metric.source} />
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+
+                  {/* Overall Progression */}
+                  <div className="rounded-lg bg-slate-50 p-4 mt-6">
+                    <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Overall Status</div>
+                    <span className={`inline-flex items-center rounded-md px-3 py-1 text-sm font-medium capitalize ${
+                      selectedPatient.progression_status === 'improving' ? 'bg-emerald-100 text-emerald-800' :
+                      selectedPatient.progression_status === 'worsening' ? 'bg-rose-100 text-rose-800' :
+                      selectedPatient.progression_status === 'recurring' ? 'bg-violet-100 text-violet-800' :
+                      'bg-slate-200 text-slate-700'
+                    }`}>{selectedPatient.progression_status}</span>
+                  </div>
                 </div>
               )}
             </div>
