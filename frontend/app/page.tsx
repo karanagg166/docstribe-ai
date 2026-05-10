@@ -4,32 +4,47 @@ import { useStreamingDashboard } from "@/hooks/useStreamingDashboard";
 import { usePatientDetail } from "@/hooks/usePatientDetail";
 import DashboardShell from "@/components/layout/DashboardShell";
 import SummaryCards from "@/components/summary/SummaryCards";
-import FilterBar from "@/components/worklist/FilterBar";
+import FilterBar, { type RiskSortOrder } from "@/components/worklist/FilterBar";
 import PatientWorklist, { PatientWorklistSkeleton } from "@/components/worklist/PatientWorklist";
 import PatientDetailPanel from "@/components/detail/PatientDetailPanel";
 import CohortDistribution from "@/components/summary/CohortDistribution";
 import ConversionFunnel from "@/components/summary/ConversionFunnel";
 import { useState, useMemo } from "react";
 
+const RISK_ORDER: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+
 export default function DashboardPage() {
   const { data, isLoading, isStreaming, error, progress } = useStreamingDashboard();
   const { isPanelOpen } = usePatientDetail();
   
-  // Filtering state
+  // Filtering & sorting state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRisk, setSelectedRisk] = useState<string>("all");
   const [selectedCohort, setSelectedCohort] = useState<string>("all");
+  const [riskSort, setRiskSort] = useState<RiskSortOrder>("high-low");
   
-  const filteredPatients = useMemo(() => {
+  const filteredAndSortedPatients = useMemo(() => {
     const patients = data?.patients || [];
-    return patients.filter((p) => {
+
+    // 1. Filter
+    const filtered = patients.filter((p) => {
       const matchesSearch = (p.patient_name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
                             (p.patient_id || "").toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRisk = selectedRisk === "all" || p.risk_level === selectedRisk;
       const matchesCohort = selectedCohort === "all" || p.cohort_bucket === selectedCohort;
       return matchesSearch && matchesRisk && matchesCohort;
     });
-  }, [data?.patients, searchQuery, selectedRisk, selectedCohort]);
+
+    // 2. Sort by risk
+    const sorted = [...filtered].sort((a, b) => {
+      const aOrder = RISK_ORDER[a.risk_level?.toUpperCase()] ?? 1;
+      const bOrder = RISK_ORDER[b.risk_level?.toUpperCase()] ?? 1;
+      return riskSort === "high-low" ? aOrder - bOrder : bOrder - aOrder;
+    });
+
+    // 3. Re-assign ranks 1..N based on current sort order
+    return sorted.map((p, i) => ({ ...p, suggested_priority_rank: i + 1 }));
+  }, [data?.patients, searchQuery, selectedRisk, selectedCohort, riskSort]);
 
   const availableCohorts = useMemo(() => {
     return data?.summary?.cohort_distribution ? Object.keys(data.summary.cohort_distribution).sort() : [];
@@ -115,7 +130,7 @@ export default function DashboardPage() {
             </>
           )}
           
-          {/* Patient worklist — renders progressively as patients stream in */}
+          {/* Patient worklist */}
           <div className="glass-card rounded-xl overflow-hidden">
             <FilterBar 
               searchQuery={searchQuery}
@@ -124,9 +139,11 @@ export default function DashboardPage() {
               setSelectedRisk={setSelectedRisk}
               selectedCohort={selectedCohort}
               setSelectedCohort={setSelectedCohort}
+              riskSort={riskSort}
+              setRiskSort={setRiskSort}
               availableCohorts={availableCohorts}
             />
-            <PatientWorklist patients={filteredPatients} />
+            <PatientWorklist patients={filteredAndSortedPatients} />
           </div>
         </div>
       )}

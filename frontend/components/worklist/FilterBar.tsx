@@ -1,5 +1,7 @@
 import React from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X } from "lucide-react";
+
+export type RiskSortOrder = "high-low" | "low-high";
 
 interface FilterBarProps {
   searchQuery: string;
@@ -8,6 +10,8 @@ interface FilterBarProps {
   setSelectedRisk: (val: string) => void;
   selectedCohort: string;
   setSelectedCohort: (val: string) => void;
+  riskSort: RiskSortOrder;
+  setRiskSort: (val: RiskSortOrder) => void;
   availableCohorts?: string[];
 }
 
@@ -15,15 +19,17 @@ export default function FilterBar({
   searchQuery, setSearchQuery,
   selectedRisk, setSelectedRisk,
   selectedCohort, setSelectedCohort,
+  riskSort, setRiskSort,
   availableCohorts = []
 }: FilterBarProps) {
   
-  const hasFilters = searchQuery !== "" || selectedRisk !== "all" || selectedCohort !== "all";
+  const hasFilters = searchQuery !== "" || selectedRisk !== "all" || selectedCohort !== "all" || riskSort !== "high-low";
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedRisk("all");
     setSelectedCohort("all");
+    setRiskSort("high-low");
   };
 
   return (
@@ -71,6 +77,19 @@ export default function FilterBar({
               <option key={cohort} value={cohort}>{cohort}</option>
             ))}
           </select>
+
+          {/* Sort by risk */}
+          <div className="flex items-center gap-1.5 rounded-md py-1.5 pl-3 pr-2 text-sm ring-1 ring-inset ring-slate-300 bg-slate-50">
+            <ArrowUpDown size={14} className="text-slate-400 flex-shrink-0" />
+            <select
+              value={riskSort}
+              onChange={(e) => setRiskSort(e.target.value as RiskSortOrder)}
+              className="border-0 bg-transparent text-sm text-slate-900 focus:ring-0 cursor-pointer pr-6 py-0"
+            >
+              <option value="high-low">Risk: High → Low</option>
+              <option value="low-high">Risk: Low → High</option>
+            </select>
+          </div>
 
           {hasFilters && (
             <button
