@@ -10,13 +10,22 @@ interface StreamingState {
   progress: { current: number; total: number };
 }
 
+const RISK_ORDER: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+
+/** Sort patients by risk (HIGH → MEDIUM → LOW) and assign sequential ranks. */
+function sortAndRank(patients: PatientInsight[]): PatientInsight[] {
+  const sorted = [...patients].sort(
+    (a, b) => (RISK_ORDER[a.risk_level] ?? 1) - (RISK_ORDER[b.risk_level] ?? 1)
+  );
+  return sorted.map((p, i) => ({ ...p, suggested_priority_rank: i + 1 }));
+}
+
 /**
  * Hook that connects to the SSE streaming endpoint and progressively
  * builds the dashboard state as each patient analysis completes.
  *
- * - If the backend has cached data, all events arrive nearly instantly.
- * - If not cached, patients trickle in one-by-one as the LLM finishes each.
- * - The summary arrives after the last patient.
+ * If SSE is unavailable (e.g. Vercel proxy doesn't support it), it
+ * falls back to the regular batch /api/dashboard endpoint automatically.
  */
 export function useStreamingDashboard() {
   const [state, setState] = useState<StreamingState>({
@@ -31,18 +40,50 @@ export function useStreamingDashboard() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const hasConnected = useRef(false);
 
+  /** Fallback: regular fetch from the batch endpoint. */
+  const fetchBatch = useCallback(async () => {
+    try {
+      const res = await fetch('/api/dashboard');
+      if (!res.ok) throw new Error(`Dashboard API returned ${res.status}`);
+      const data = await res.json();
+
+      const ranked = sortAndRank(data.patients ?? []);
+
+      setState({
+        patients: ranked,
+        summary: data.summary ?? null,
+        isLoading: false,
+        isStreaming: false,
+        error: null,
+        progress: { current: ranked.length, total: ranked.length },
+      });
+    } catch (e) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        isStreaming: false,
+        error: e instanceof Error ? e : new Error('Failed to load dashboard'),
+      }));
+    }
+  }, []);
+
   const connect = useCallback(() => {
     // Prevent double-connect in React StrictMode
     if (hasConnected.current) return;
     hasConnected.current = true;
 
     // SSE must connect directly to the backend — Next.js rewrites buffer
-    // the response, which breaks streaming. In production, use the public
+    // the response, which breaks streaming.  In production, use the public
     // backend URL; locally, the /api proxy works fine for dev.
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const url = backendUrl
-      ? `${backendUrl}/dashboard/stream`
-      : '/api/dashboard/stream';
+
+    // If we don't have a direct backend URL, skip SSE entirely and use batch.
+    if (!backendUrl) {
+      fetchBatch();
+      return;
+    }
+
+    const url = `${backendUrl}/dashboard/stream`;
 
     setState(prev => ({
       ...prev,
@@ -57,21 +98,34 @@ export function useStreamingDashboard() {
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
+    // Timeout: if no patient event within 15s, close SSE and fall back.
+    const timeout = setTimeout(() => {
+      es.close();
+      hasConnected.current = false;
+      fetchBatch();
+    }, 15000);
+
     es.addEventListener('patient', (event) => {
+      clearTimeout(timeout);
       try {
         const data = JSON.parse(event.data);
-        setState(prev => ({
-          ...prev,
-          patients: [...prev.patients, data.patient as PatientInsight],
-          progress: { current: prev.patients.length + 1, total: data.total },
-          isLoading: false, // content is available after the first patient
-        }));
+        setState(prev => {
+          const updated = [...prev.patients, data.patient as PatientInsight];
+          const ranked = sortAndRank(updated);
+          return {
+            ...prev,
+            patients: ranked,
+            progress: { current: updated.length, total: data.total },
+            isLoading: false,
+          };
+        });
       } catch (e) {
         console.error('Failed to parse patient event:', e);
       }
     });
 
     es.addEventListener('summary', (event) => {
+      clearTimeout(timeout);
       try {
         const data = JSON.parse(event.data);
         setState(prev => ({
@@ -84,6 +138,7 @@ export function useStreamingDashboard() {
     });
 
     es.addEventListener('complete', () => {
+      clearTimeout(timeout);
       setState(prev => ({
         ...prev,
         isStreaming: false,
@@ -93,7 +148,7 @@ export function useStreamingDashboard() {
     });
 
     es.addEventListener('error', (event) => {
-      // Check if it's a custom error event from the server
+      clearTimeout(timeout);
       const messageEvent = event as MessageEvent;
       if (messageEvent.data) {
         try {
@@ -105,25 +160,22 @@ export function useStreamingDashboard() {
             error: new Error(errorData.detail || 'Stream error'),
           }));
         } catch {
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            isStreaming: false,
-            error: new Error('Stream connection failed'),
-          }));
+          // SSE connection failed — fall back to batch
+          es.close();
+          hasConnected.current = false;
+          fetchBatch();
+          return;
         }
       } else {
-        // EventSource connection error (network issue, etc.)
-        setState(prev => ({
-          ...prev,
-          isLoading: prev.patients.length === 0, // only show loading if we have no data yet
-          isStreaming: false,
-          error: prev.patients.length === 0 ? new Error('Failed to connect to analysis stream') : null,
-        }));
+        // EventSource connection error — fall back to batch
+        es.close();
+        hasConnected.current = false;
+        fetchBatch();
+        return;
       }
       es.close();
     });
-  }, []);
+  }, [fetchBatch]);
 
   useEffect(() => {
     connect();
