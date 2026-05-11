@@ -20,7 +20,6 @@ export async function GET() {
   try {
     const upstream = await fetch(streamUrl, {
       headers: { Accept: "text/event-stream" },
-      // @ts-expect-error – Node 18+ fetch supports signal; prevent caching
       cache: "no-store",
     });
 
