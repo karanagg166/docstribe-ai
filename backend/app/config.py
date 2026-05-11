@@ -52,6 +52,17 @@ class Settings(BaseSettings):
     
     @property
     def cors_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        origins = [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        # Always allow Vercel frontend domains for SSE streaming
+        vercel_origins = [
+            "https://docstribe-frontend.vercel.app",
+            "https://docstribe-ai.vercel.app",
+            "https://docstribe-frontend-karan-aggarwals-projects.vercel.app",
+            "https://docstribe-backend-karan-aggarwals-projects.vercel.app",
+        ]
+        for vo in vercel_origins:
+            if vo not in origins:
+                origins.append(vo)
+        return origins
 
 settings = Settings()

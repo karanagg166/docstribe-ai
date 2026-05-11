@@ -24,8 +24,11 @@ function sortAndRank(patients: PatientInsight[]): PatientInsight[] {
  * Hook that connects to the SSE streaming endpoint and progressively
  * builds the dashboard state as each patient analysis completes.
  *
- * If SSE is unavailable (e.g. Vercel proxy doesn't support it), it
- * falls back to the regular batch /api/dashboard endpoint automatically.
+ * Uses `/api/dashboard/stream` — a same-origin Next.js route that proxies
+ * the backend SSE. This works on both local and Vercel deployments without
+ * any extra env vars or CORS configuration.
+ *
+ * Falls back to the batch `/api/dashboard` endpoint if SSE fails.
  */
 export function useStreamingDashboard() {
   const [state, setState] = useState<StreamingState>({
@@ -72,18 +75,9 @@ export function useStreamingDashboard() {
     if (hasConnected.current) return;
     hasConnected.current = true;
 
-    // SSE must connect directly to the backend — Next.js rewrites buffer
-    // the response, which breaks streaming.  In production, use the public
-    // backend URL; locally, the /api proxy works fine for dev.
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-    // If we don't have a direct backend URL, skip SSE entirely and use batch.
-    if (!backendUrl) {
-      fetchBatch();
-      return;
-    }
-
-    const url = `${backendUrl}/dashboard/stream`;
+    // Always use the same-origin streaming proxy route.
+    // This works on both local (Docker) and Vercel deployments.
+    const url = '/api/dashboard/stream';
 
     setState(prev => ({
       ...prev,
@@ -98,12 +92,13 @@ export function useStreamingDashboard() {
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
-    // Timeout: if no patient event within 15s, close SSE and fall back.
-    const timeout = setTimeout(() => {
+    // Timeout: if no patient event within 20s, close SSE and fall back.
+    let timeout = setTimeout(() => {
+      console.warn('[streaming] No patient received within 20s, falling back to batch.');
       es.close();
       hasConnected.current = false;
       fetchBatch();
-    }, 15000);
+    }, 20000);
 
     es.addEventListener('patient', (event) => {
       clearTimeout(timeout);
@@ -147,34 +142,19 @@ export function useStreamingDashboard() {
       es.close();
     });
 
-    es.addEventListener('error', (event) => {
+    es.onerror = () => {
       clearTimeout(timeout);
-      const messageEvent = event as MessageEvent;
-      if (messageEvent.data) {
-        try {
-          const errorData = JSON.parse(messageEvent.data);
-          setState(prev => ({
-            ...prev,
-            isLoading: false,
-            isStreaming: false,
-            error: new Error(errorData.detail || 'Stream error'),
-          }));
-        } catch {
-          // SSE connection failed — fall back to batch
-          es.close();
-          hasConnected.current = false;
-          fetchBatch();
-          return;
-        }
-      } else {
-        // EventSource connection error — fall back to batch
-        es.close();
+      console.warn('[streaming] EventSource error, falling back to batch.');
+      es.close();
+      // Only fall back if we haven't received any patients yet
+      if (state.patients.length === 0) {
         hasConnected.current = false;
         fetchBatch();
-        return;
+      } else {
+        // We already have some patients, just mark streaming as done
+        setState(prev => ({ ...prev, isStreaming: false, isLoading: false }));
       }
-      es.close();
-    });
+    };
   }, [fetchBatch]);
 
   useEffect(() => {
