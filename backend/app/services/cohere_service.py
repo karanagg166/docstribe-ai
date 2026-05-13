@@ -106,6 +106,7 @@ async def _call_cohere_with_retry(messages: list) -> str:
                 model="command-r-plus-08-2024",
                 messages=messages,
                 response_format={"type": "json_object"},
+                temperature=0,
             )
             return response.message.content[0].text.strip()
         
