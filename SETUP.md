@@ -1,5 +1,7 @@
 # Setup Guide
 
+Use [uv](https://docs.astral.sh/uv/getting-started/installation/) for Python environments and dependencies. Activate a project virtual environment before `uv pip install`; the committed requirements and constraints remain authoritative. Use `--system` only inside disposable containers or CI runners. JavaScript tooling uses pnpm.
+
 ## Prerequisites
 
 | Tool | Version | Notes |
@@ -40,12 +42,12 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 cd backend
 
 # Create and activate virtual environment
-python -m venv venv
+uv venv --python 3.12 venv
 source venv/bin/activate          # macOS / Linux
 # venv\Scripts\activate           # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
 # Create environment file
 cp .env.example .env              # then fill in COHERE_API_KEY
